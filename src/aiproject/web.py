@@ -65,29 +65,86 @@ HTML = """<!doctype html>
       font-weight: 500;
     }
 
-    .brand-mark {
-      width: 20px;
-      height: 20px;
-      border: 2px solid var(--text);
-      border-radius: 8px 8px 6px 6px;
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
       position: relative;
+      overflow: hidden;
+      flex: 0 0 auto;
+      background:
+        radial-gradient(circle at 24px 8px, rgba(255, 255, 255, 0.9) 0 6px, transparent 7px),
+        linear-gradient(135deg, #22135f 0%, #5033c8 42%, #00b9ff 72%, #0b123f 100%);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
     }
 
-    .brand-mark::before,
-    .brand-mark::after {
+    .brand-icon::before,
+    .brand-icon::after {
       content: "";
       position: absolute;
-      top: -8px;
-      width: 5px;
-      height: 9px;
-      border: 2px solid var(--text);
-      border-bottom: 0;
-      border-radius: 6px 6px 0 0;
-      background: var(--bg);
+      top: 14px;
+      width: 15px;
+      height: 12px;
+      border-radius: 55% 55% 45% 45%;
+      background: #f6e8ff;
+      transform: rotate(-24deg);
+      box-shadow: inset 0 -2px 0 rgba(112, 45, 126, 0.35);
     }
 
-    .brand-mark::before { left: 2px; }
-    .brand-mark::after { right: 2px; }
+    .brand-icon::before { left: 1px; }
+    .brand-icon::after {
+      right: 1px;
+      transform: rotate(24deg);
+    }
+
+    .poro {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      bottom: 1px;
+      height: 26px;
+      border-radius: 48% 48% 42% 42%;
+      background: #ffffff;
+      box-shadow: 0 -4px 10px rgba(255, 255, 255, 0.45);
+    }
+
+    .poro::before,
+    .poro::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      width: 5px;
+      height: 7px;
+      border-radius: 50%;
+      background: #111111;
+    }
+
+    .poro::before { left: 10px; }
+    .poro::after { right: 10px; }
+
+    .poro-gem {
+      position: absolute;
+      top: 2px;
+      left: 15px;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      background: linear-gradient(135deg, #d9b5ff, #7d35d7);
+      transform: rotate(45deg);
+      box-shadow: 0 0 8px rgba(201, 137, 255, 0.95);
+      z-index: 2;
+    }
+
+    .poro-tongue {
+      position: absolute;
+      left: 17px;
+      bottom: -2px;
+      width: 10px;
+      height: 12px;
+      border-radius: 7px 7px 8px 8px;
+      background: #e95a83;
+      z-index: 3;
+    }
 
     .window-actions {
       display: flex;
@@ -105,9 +162,25 @@ HTML = """<!doctype html>
       display: flex;
       gap: 24px;
       color: #777777;
-      font-size: 30px;
-      line-height: 1;
       z-index: 10;
+    }
+
+    .tool-button {
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #777777;
+      font-size: 27px;
+      line-height: 34px;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .tool-button:hover {
+      background: #f4f4f4;
+      color: #333333;
     }
 
     main {
@@ -322,11 +395,20 @@ HTML = """<!doctype html>
 <body>
   <div class="app">
     <header>
-      <div class="brand"><span class="brand-mark"></span><span>Hextech</span></div>
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">
+          <span class="poro-gem"></span>
+          <span class="poro"><span class="poro-tongue"></span></span>
+        </span>
+        <span>Hextech</span>
+      </div>
       <div class="window-actions"><span>−</span><span>□</span><span>×</span></div>
     </header>
 
-    <div class="left-tools" aria-hidden="true"><span>▣</span><span>□↗</span></div>
+    <div class="left-tools">
+      <button class="tool-button" type="button" title="设置" aria-label="设置">⚙</button>
+      <button class="tool-button" type="button" title="设置" aria-label="设置">⚙</button>
+    </div>
 
     <main>
       <section class="conversation">
