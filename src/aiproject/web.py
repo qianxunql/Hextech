@@ -269,88 +269,7 @@ HTML = """<!doctype html>
       min-height: 0;
     }
 
-    .empty {
-      margin: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      color: #0d0d0d;
-    }
-
-    .poro-line {
-      width: 88px;
-      height: 72px;
-      position: relative;
-    }
-
-    .poro-line::before,
-    .poro-line::after {
-      content: "";
-      position: absolute;
-      top: 18px;
-      width: 22px;
-      height: 16px;
-      border: 4px solid #0d0d0d;
-      border-radius: 60% 45% 60% 45%;
-      background: var(--bg);
-      transform: rotate(-28deg);
-    }
-
-    .poro-line::before { left: 1px; }
-    .poro-line::after {
-      right: 1px;
-      transform: rotate(28deg) scaleX(-1);
-    }
-
-    .poro-head {
-      position: absolute;
-      left: 18px;
-      top: 14px;
-      width: 52px;
-      height: 44px;
-      border: 5px solid #0d0d0d;
-      border-radius: 45% 45% 52% 52%;
-      background: var(--bg);
-    }
-
-    .poro-head::before,
-    .poro-head::after {
-      content: "";
-      position: absolute;
-      top: 16px;
-      width: 6px;
-      height: 8px;
-      border-radius: 50%;
-      background: #0d0d0d;
-    }
-
-    .poro-head::before { left: 12px; }
-    .poro-head::after { right: 12px; }
-
-    .poro-line-gem {
-      position: absolute;
-      left: 36px;
-      top: 1px;
-      width: 16px;
-      height: 16px;
-      border: 4px solid #0d0d0d;
-      transform: rotate(45deg);
-      background: var(--bg);
-      z-index: 2;
-    }
-
-    .poro-line-tongue {
-      position: absolute;
-      left: 37px;
-      top: 48px;
-      width: 14px;
-      height: 18px;
-      border: 4px solid #0d0d0d;
-      border-top: 0;
-      border-radius: 0 0 10px 10px;
-      background: var(--bg);
-    }
+    .empty { margin: auto; }
 
     .messages {
       display: none;
@@ -516,13 +435,7 @@ HTML = """<!doctype html>
 
     <main>
       <section class="conversation">
-        <div class="empty" id="empty">
-          <div class="poro-line" aria-hidden="true">
-            <div class="poro-line-gem"></div>
-            <div class="poro-head"></div>
-            <div class="poro-line-tongue"></div>
-          </div>
-        </div>
+        <div class="empty" id="empty"></div>
         <div class="messages" id="messages"></div>
       </section>
     </main>
