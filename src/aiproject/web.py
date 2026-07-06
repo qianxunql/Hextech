@@ -207,36 +207,47 @@ HTML = """<!doctype html>
       font-weight: 600;
     }
 
-    .model-choice {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-      min-height: 54px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: #ffffff;
-      cursor: pointer;
-      margin-top: 10px;
-      font-size: 15px;
+    .setting-field {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
     }
 
-    .model-choice input {
-      width: 18px;
-      height: 18px;
-      accent-color: #111111;
-    }
-
-    .model-name {
-      display: block;
+    .setting-label {
+      color: #4b4b4b;
+      font-size: 13px;
       font-weight: 600;
-      line-height: 1.3;
     }
 
-    .model-desc {
-      display: block;
-      margin-top: 2px;
+    .api-key-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #ffffff;
+      color: var(--text);
+      font: 14px "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
+    }
+
+    .api-key-input:focus {
+      border-color: #111111;
+      outline: none;
+    }
+
+    .save-settings {
+      width: 100%;
+      height: 42px;
+      margin-top: 14px;
+      border-radius: 12px;
+      background: #111111;
+      color: #ffffff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .settings-note {
+      margin: 10px 0 0;
       color: var(--muted);
       font-size: 12px;
       line-height: 1.4;
@@ -422,7 +433,7 @@ HTML = """<!doctype html>
       font: 24px "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
     }
 
-    .icon-button {
+    .upload-button {
       width: 56px;
       border-radius: 50%;
       color: #777777;
@@ -493,21 +504,13 @@ HTML = """<!doctype html>
 
     <div class="settings-backdrop" id="settingsBackdrop">
       <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-        <h2 class="settings-title" id="settingsTitle">模型设置</h2>
-        <label class="model-choice">
-          <input type="radio" name="modelMode" value="cloud" />
-          <span>
-            <span class="model-name">云端 DeepSeek</span>
-            <span class="model-desc">使用 deepseek-chat，回答更快，不吃本机 GPU</span>
-          </span>
+        <h2 class="settings-title" id="settingsTitle">设置</h2>
+        <label class="setting-field">
+          <span class="setting-label">DeepSeek API Key</span>
+          <input class="api-key-input" id="apiKeyInput" type="password" placeholder="sk-..." autocomplete="off" />
         </label>
-        <label class="model-choice">
-          <input type="radio" name="modelMode" value="local" />
-          <span>
-            <span class="model-name">本地 Ollama</span>
-            <span class="model-desc">使用 qwen3:4b，离线可用但依赖本机性能</span>
-          </span>
-        </label>
+        <button class="save-settings" id="saveSettings" type="button">保存 API Key</button>
+        <p class="settings-note" id="settingsNote">API Key 会保存到项目根目录的 .env 文件。</p>
       </section>
     </div>
 
@@ -528,8 +531,7 @@ HTML = """<!doctype html>
       <form class="composer" id="form">
         <textarea id="question" placeholder="Send a message" autocomplete="off"></textarea>
         <div class="controls">
-          <button class="icon-button" type="button" title="新话题">+</button>
-          <button class="icon-button" type="button" title="知识库">◎</button>
+          <button class="upload-button" type="button" title="上传">⇧</button>
           <select id="modelSelect" aria-label="模型">
             <option value="cloud">deepseek-chat</option>
             <option value="local">qwen3:4b</option>
@@ -549,7 +551,9 @@ HTML = """<!doctype html>
     const settingsButton = document.querySelector("#settingsButton");
     const settingsBackdrop = document.querySelector("#settingsBackdrop");
     const modelSelect = document.querySelector("#modelSelect");
-    const modelModeInputs = [...document.querySelectorAll("input[name='modelMode']")];
+    const apiKeyInput = document.querySelector("#apiKeyInput");
+    const saveSettings = document.querySelector("#saveSettings");
+    const settingsNote = document.querySelector("#settingsNote");
 
     const MODEL_CONFIGS = {
       cloud: { provider: "deepseek", model: "deepseek-chat", label: "deepseek-chat" },
@@ -557,16 +561,42 @@ HTML = """<!doctype html>
     };
 
     function currentMode() {
-      return localStorage.getItem("hextech:modelMode") || "cloud";
+      return modelSelect.value || localStorage.getItem("hextech:modelMode") || "cloud";
     }
 
     function applyModelMode(mode) {
       const nextMode = MODEL_CONFIGS[mode] ? mode : "cloud";
       localStorage.setItem("hextech:modelMode", nextMode);
       modelSelect.value = nextMode;
-      modelModeInputs.forEach((inputNode) => {
-        inputNode.checked = inputNode.value === nextMode;
-      });
+    }
+
+    async function loadSettings() {
+      try {
+        const response = await fetch("/api/settings");
+        const data = await response.json();
+        apiKeyInput.value = "";
+        apiKeyInput.placeholder = data.hasDeepseekApiKey ? "已保存，输入新 Key 可覆盖" : "sk-...";
+      } catch {
+        settingsNote.textContent = "读取设置失败。";
+      }
+    }
+
+    async function saveApiKey() {
+      saveSettings.disabled = true;
+      settingsNote.textContent = "正在保存...";
+      try {
+        const response = await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deepseekApiKey: apiKeyInput.value.trim() }),
+        });
+        const data = await response.json();
+        settingsNote.textContent = data.ok ? "已保存到 .env。" : "保存失败。";
+      } catch (error) {
+        settingsNote.textContent = `保存失败：${error}`;
+      } finally {
+        saveSettings.disabled = false;
+      }
     }
 
     function setReady() {
@@ -625,6 +655,7 @@ HTML = """<!doctype html>
 
     settingsButton.addEventListener("click", () => {
       settingsBackdrop.classList.add("open");
+      loadSettings();
     });
 
     settingsBackdrop.addEventListener("click", (event) => {
@@ -633,16 +664,11 @@ HTML = """<!doctype html>
       }
     });
 
-    modelModeInputs.forEach((inputNode) => {
-      inputNode.addEventListener("change", () => {
-        applyModelMode(inputNode.value);
-        settingsBackdrop.classList.remove("open");
-      });
-    });
-
     modelSelect.addEventListener("change", () => {
       applyModelMode(modelSelect.value);
     });
+
+    saveSettings.addEventListener("click", saveApiKey);
 
     applyModelMode(currentMode());
     input.focus();
@@ -668,6 +694,41 @@ def model_overrides(model_mode: str) -> dict[str, str]:
     return {"model_provider": "deepseek", "deepseek_model": "deepseek-chat"}
 
 
+def read_env_value(key: str, path: str = ".env") -> str:
+    env_path = Path(path)
+    if not env_path.exists():
+        return ""
+    for raw_line in env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        env_key, value = line.split("=", 1)
+        if env_key.strip() == key:
+            return value.strip().strip('"').strip("'")
+    return ""
+
+
+def write_env_value(key: str, value: str, path: str = ".env") -> None:
+    env_path = Path(path)
+    lines = env_path.read_text(encoding="utf-8", errors="replace").splitlines() if env_path.exists() else []
+    updated = False
+    next_lines: list[str] = []
+    for raw_line in lines:
+        if raw_line.strip().startswith("#") or "=" not in raw_line:
+            next_lines.append(raw_line)
+            continue
+        env_key, _ = raw_line.split("=", 1)
+        if env_key.strip() == key:
+            next_lines.append(f"{key}={value}")
+            updated = True
+        else:
+            next_lines.append(raw_line)
+    if not updated:
+        next_lines.append(f"{key}={value}")
+    env_path.write_text("\n".join(next_lines) + "\n", encoding="utf-8")
+    os.environ[key] = value
+
+
 class HextechRequestHandler(BaseHTTPRequestHandler):
     server_version = "HextechWeb/0.1"
 
@@ -679,10 +740,17 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
         if path == "/health":
             self._send_json({"ok": True})
             return
+        if path == "/api/settings":
+            self._send_json({"hasDeepseekApiKey": bool(read_env_value("DEEPSEEK_API_KEY"))})
+            return
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
+        if path == "/api/settings":
+            self._handle_settings_post()
+            return
+
         if path != "/api/ask":
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
@@ -699,6 +767,17 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
             self._send_json({"answer": answer})
         except Exception as exc:  # noqa: BLE001 - returned to local UI
             self._send_json({"error": str(exc), "answer": f"出错了：{exc}"}, status=500)
+
+    def _handle_settings_post(self) -> None:
+        length = int(self.headers.get("Content-Length", "0"))
+        raw_body = self.rfile.read(length)
+        try:
+            payload = json.loads(raw_body.decode("utf-8"))
+            api_key = str(payload.get("deepseekApiKey", "")).strip()
+            write_env_value("DEEPSEEK_API_KEY", api_key)
+            self._send_json({"ok": True})
+        except Exception as exc:  # noqa: BLE001 - returned to local UI
+            self._send_json({"ok": False, "error": str(exc)}, status=500)
 
     def log_message(self, format: str, *args: object) -> None:
         return
