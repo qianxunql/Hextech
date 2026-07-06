@@ -155,21 +155,15 @@ HTML = """<!doctype html>
       user-select: none;
     }
 
-    .left-tools {
+    .settings-trigger {
       position: fixed;
       left: 28px;
-      top: 64px;
-      display: flex;
-      gap: 24px;
-      color: #777777;
+      bottom: 28px;
       z-index: 10;
-    }
-
-    .tool-button {
       width: 34px;
       height: 34px;
       border: 0;
-      border-radius: 10px;
+      border-radius: 50%;
       background: transparent;
       color: #777777;
       font-size: 27px;
@@ -178,9 +172,74 @@ HTML = """<!doctype html>
       cursor: pointer;
     }
 
-    .tool-button:hover {
+    .settings-trigger:hover {
       background: #f4f4f4;
       color: #333333;
+    }
+
+    .settings-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      justify-content: flex-start;
+      padding: 0 0 76px 28px;
+      background: rgba(255, 255, 255, 0.2);
+      z-index: 20;
+    }
+
+    .settings-backdrop.open {
+      display: flex;
+    }
+
+    .settings-panel {
+      width: 320px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.14);
+      padding: 18px;
+    }
+
+    .settings-title {
+      margin: 0 0 14px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .model-choice {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      min-height: 54px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #ffffff;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 15px;
+    }
+
+    .model-choice input {
+      width: 18px;
+      height: 18px;
+      accent-color: #111111;
+    }
+
+    .model-name {
+      display: block;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .model-desc {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
     }
 
     main {
@@ -208,54 +267,79 @@ HTML = """<!doctype html>
       color: #0d0d0d;
     }
 
-    .llama {
-      width: 62px;
-      height: 82px;
+    .poro-line {
+      width: 88px;
+      height: 72px;
       position: relative;
-      border: 5px solid #0d0d0d;
-      border-bottom: 0;
-      border-radius: 28px 28px 0 0;
     }
 
-    .llama::before,
-    .llama::after {
+    .poro-line::before,
+    .poro-line::after {
       content: "";
       position: absolute;
-      top: -22px;
-      width: 12px;
-      height: 27px;
+      top: 18px;
+      width: 22px;
+      height: 16px;
+      border: 4px solid #0d0d0d;
+      border-radius: 60% 45% 60% 45%;
+      background: var(--bg);
+      transform: rotate(-28deg);
+    }
+
+    .poro-line::before { left: 1px; }
+    .poro-line::after {
+      right: 1px;
+      transform: rotate(28deg) scaleX(-1);
+    }
+
+    .poro-head {
+      position: absolute;
+      left: 18px;
+      top: 14px;
+      width: 52px;
+      height: 44px;
       border: 5px solid #0d0d0d;
-      border-bottom: 0;
-      border-radius: 12px 12px 0 0;
+      border-radius: 45% 45% 52% 52%;
       background: var(--bg);
     }
 
-    .llama::before { left: 4px; }
-    .llama::after { right: 4px; }
-
-    .face {
-      position: absolute;
-      left: 12px;
-      top: 27px;
-      width: 30px;
-      height: 20px;
-      border: 4px solid #0d0d0d;
-      border-radius: 50%;
-    }
-
-    .face::before,
-    .face::after {
+    .poro-head::before,
+    .poro-head::after {
       content: "";
       position: absolute;
-      top: 5px;
-      width: 4px;
-      height: 4px;
+      top: 16px;
+      width: 6px;
+      height: 8px;
       border-radius: 50%;
       background: #0d0d0d;
     }
 
-    .face::before { left: 7px; }
-    .face::after { right: 7px; }
+    .poro-head::before { left: 12px; }
+    .poro-head::after { right: 12px; }
+
+    .poro-line-gem {
+      position: absolute;
+      left: 36px;
+      top: 1px;
+      width: 16px;
+      height: 16px;
+      border: 4px solid #0d0d0d;
+      transform: rotate(45deg);
+      background: var(--bg);
+      z-index: 2;
+    }
+
+    .poro-line-tongue {
+      position: absolute;
+      left: 37px;
+      top: 48px;
+      width: 14px;
+      height: 18px;
+      border: 4px solid #0d0d0d;
+      border-top: 0;
+      border-radius: 0 0 10px 10px;
+      background: var(--bg);
+    }
 
     .messages {
       display: none;
@@ -378,7 +462,7 @@ HTML = """<!doctype html>
     }
 
     @media (max-width: 760px) {
-      .left-tools { display: none; }
+      .settings-trigger { left: 18px; bottom: 18px; }
       main { padding: 18px 18px 4px; }
       .composer-wrap { padding: 8px 16px 22px; }
       .composer {
@@ -405,14 +489,37 @@ HTML = """<!doctype html>
       <div class="window-actions"><span>−</span><span>□</span><span>×</span></div>
     </header>
 
-    <div class="left-tools">
-      <button class="tool-button" type="button" title="设置" aria-label="设置">⚙</button>
-      <button class="tool-button" type="button" title="设置" aria-label="设置">⚙</button>
+    <button class="settings-trigger" id="settingsButton" type="button" title="设置" aria-label="设置">⚙</button>
+
+    <div class="settings-backdrop" id="settingsBackdrop">
+      <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <h2 class="settings-title" id="settingsTitle">模型设置</h2>
+        <label class="model-choice">
+          <input type="radio" name="modelMode" value="cloud" />
+          <span>
+            <span class="model-name">云端 DeepSeek</span>
+            <span class="model-desc">使用 deepseek-chat，回答更快，不吃本机 GPU</span>
+          </span>
+        </label>
+        <label class="model-choice">
+          <input type="radio" name="modelMode" value="local" />
+          <span>
+            <span class="model-name">本地 Ollama</span>
+            <span class="model-desc">使用 qwen3:4b，离线可用但依赖本机性能</span>
+          </span>
+        </label>
+      </section>
     </div>
 
     <main>
       <section class="conversation">
-        <div class="empty" id="empty"><div class="llama"><div class="face"></div></div></div>
+        <div class="empty" id="empty">
+          <div class="poro-line" aria-hidden="true">
+            <div class="poro-line-gem"></div>
+            <div class="poro-head"></div>
+            <div class="poro-line-tongue"></div>
+          </div>
+        </div>
         <div class="messages" id="messages"></div>
       </section>
     </main>
@@ -423,8 +530,9 @@ HTML = """<!doctype html>
         <div class="controls">
           <button class="icon-button" type="button" title="新话题">+</button>
           <button class="icon-button" type="button" title="知识库">◎</button>
-          <select aria-label="模型">
-            <option>deepseek-chat</option>
+          <select id="modelSelect" aria-label="模型">
+            <option value="cloud">deepseek-chat</option>
+            <option value="local">qwen3:4b</option>
           </select>
           <button class="send" id="send" type="submit" title="发送">↑</button>
         </div>
@@ -438,6 +546,28 @@ HTML = """<!doctype html>
     const send = document.querySelector("#send");
     const empty = document.querySelector("#empty");
     const messages = document.querySelector("#messages");
+    const settingsButton = document.querySelector("#settingsButton");
+    const settingsBackdrop = document.querySelector("#settingsBackdrop");
+    const modelSelect = document.querySelector("#modelSelect");
+    const modelModeInputs = [...document.querySelectorAll("input[name='modelMode']")];
+
+    const MODEL_CONFIGS = {
+      cloud: { provider: "deepseek", model: "deepseek-chat", label: "deepseek-chat" },
+      local: { provider: "ollama", model: "qwen3:4b", label: "qwen3:4b" },
+    };
+
+    function currentMode() {
+      return localStorage.getItem("hextech:modelMode") || "cloud";
+    }
+
+    function applyModelMode(mode) {
+      const nextMode = MODEL_CONFIGS[mode] ? mode : "cloud";
+      localStorage.setItem("hextech:modelMode", nextMode);
+      modelSelect.value = nextMode;
+      modelModeInputs.forEach((inputNode) => {
+        inputNode.checked = inputNode.value === nextMode;
+      });
+    }
 
     function setReady() {
       send.classList.toggle("ready", input.value.trim().length > 0);
@@ -481,7 +611,7 @@ HTML = """<!doctype html>
         const response = await fetch("/api/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question }),
+          body: JSON.stringify({ question, modelMode: currentMode() }),
         });
         const data = await response.json();
         pending.textContent = data.answer || "没有得到回答。";
@@ -493,6 +623,28 @@ HTML = """<!doctype html>
       }
     });
 
+    settingsButton.addEventListener("click", () => {
+      settingsBackdrop.classList.add("open");
+    });
+
+    settingsBackdrop.addEventListener("click", (event) => {
+      if (event.target === settingsBackdrop) {
+        settingsBackdrop.classList.remove("open");
+      }
+    });
+
+    modelModeInputs.forEach((inputNode) => {
+      inputNode.addEventListener("change", () => {
+        applyModelMode(inputNode.value);
+        settingsBackdrop.classList.remove("open");
+      });
+    });
+
+    modelSelect.addEventListener("change", () => {
+      applyModelMode(modelSelect.value);
+    });
+
+    applyModelMode(currentMode());
     input.focus();
     setReady();
   </script>
@@ -508,6 +660,12 @@ def app_dir() -> Path:
             return bundle_dir
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parents[2]
+
+
+def model_overrides(model_mode: str) -> dict[str, str]:
+    if model_mode == "local":
+        return {"model_provider": "ollama", "ollama_model": "qwen3:4b"}
+    return {"model_provider": "deepseek", "deepseek_model": "deepseek-chat"}
 
 
 class HextechRequestHandler(BaseHTTPRequestHandler):
@@ -536,7 +694,8 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
             question = str(payload.get("question", "")).strip()
             if not question:
                 raise ValueError("question is required")
-            answer = run(question)
+            model_mode = str(payload.get("modelMode", "cloud")).strip().lower()
+            answer = run(question, overrides=model_overrides(model_mode))
             self._send_json({"answer": answer})
         except Exception as exc:  # noqa: BLE001 - returned to local UI
             self._send_json({"error": str(exc), "answer": f"出错了：{exc}"}, status=500)

@@ -2,6 +2,7 @@ import argparse
 
 from langchain_core.messages import HumanMessage
 
+from aiproject.config import settings_override
 from aiproject.graph import graph
 from aiproject.scraper import (
     download_champion_htmls_from_index,
@@ -12,8 +13,9 @@ from aiproject.scraper import (
 from aiproject.vectorstore import ingest_pages
 
 
-def run(question: str) -> str:
-    result = graph.invoke({"messages": [HumanMessage(content=question)]})
+def run(question: str, overrides: dict | None = None) -> str:
+    with settings_override(**(overrides or {})):
+        result = graph.invoke({"messages": [HumanMessage(content=question)]})
     answer = result["messages"][-1].content
     sources = result.get("sources", [])
     if sources:
