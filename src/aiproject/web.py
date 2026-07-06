@@ -352,13 +352,6 @@ HTML = """<!doctype html>
       font: 24px "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
     }
 
-    .upload-button {
-      width: 56px;
-      border-radius: 50%;
-      color: #777777;
-      cursor: pointer;
-    }
-
     select {
       appearance: none;
       border-radius: 28px;
@@ -444,7 +437,6 @@ HTML = """<!doctype html>
       <form class="composer" id="form">
         <textarea id="question" placeholder="Send a message" autocomplete="off"></textarea>
         <div class="controls">
-          <button class="upload-button" type="button" title="上传">⇧</button>
           <select id="modelSelect" aria-label="模型">
             <option value="cloud">deepseek-chat</option>
             <option value="local">qwen3:4b</option>
