@@ -4,6 +4,7 @@ from langchain_core.messages import HumanMessage
 
 from aiproject.graph import graph
 from aiproject.scraper import (
+    download_champion_htmls_from_index,
     load_champion_pages_from_html_dir,
     load_champion_pages_from_index_html,
     scrape_champion_pages,
@@ -40,6 +41,15 @@ def ingest(
     print(f"已抓取 {len(pages)} 个英雄页面，写入 {chunk_count} 个知识片段。")
 
 
+def download(index_html: str, output_dir: str, limit: int | None = None) -> None:
+    count = download_champion_htmls_from_index(
+        index_html=index_html,
+        output_dir=output_dir,
+        limit=limit,
+    )
+    print(f"已下载 {count} 个英雄详情页到 {output_dir}。")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="英雄联盟海克斯大乱斗助手")
     subparsers = parser.add_subparsers(dest="command")
@@ -52,6 +62,11 @@ def main() -> None:
 
     ask_parser = subparsers.add_parser("ask", help="基于知识库提问")
     ask_parser.add_argument("question", help="要问助手的问题")
+
+    download_parser = subparsers.add_parser("download", help="从英雄目录页批量下载英雄详情页 HTML")
+    download_parser.add_argument("--index-html", default="data/html/champions_index.html", help="英雄目录页 HTML")
+    download_parser.add_argument("--output-dir", default="data/html/champions", help="保存英雄详情页 HTML 的目录")
+    download_parser.add_argument("--limit", type=int, help="限制下载数量，调试时很有用")
 
     parser.add_argument("legacy_question", nargs="?", help="兼容旧用法：直接传问题")
     args = parser.parse_args()
@@ -67,6 +82,14 @@ def main() -> None:
 
     if args.command == "ask":
         print(run(args.question))
+        return
+
+    if args.command == "download":
+        download(
+            index_html=args.index_html,
+            output_dir=args.output_dir,
+            limit=args.limit,
+        )
         return
 
     if args.legacy_question:

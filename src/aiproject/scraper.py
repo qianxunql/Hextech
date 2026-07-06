@@ -3,12 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from html.parser import HTMLParser
 import json
+import os
 from pathlib import Path
 import re
 from time import sleep
 from urllib.parse import urljoin, urlparse
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+try:
+    from curl_cffi import requests as curl_requests
+except ImportError:  # pragma: no cover - optional fallback
+    curl_requests = None
 
 BASE_URL = "https://apexlol.info"
 CHAMPIONS_INDEX_URL = f"{BASE_URL}/zh/champions"
@@ -65,19 +71,45 @@ class TextParser(HTMLParser):
 
 
 def fetch_html(url: str, timeout: int = 30) -> str:
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/126.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        "Cache-Control": "no-cache",
+        "Referer": BASE_URL,
+    }
+    cookie = os.getenv("APEXLOL_COOKIE")
+    if cookie:
+        headers["Cookie"] = cookie
+
+    if curl_requests is not None:
+        try:
+            response = curl_requests.get(
+                url,
+                headers=headers,
+                timeout=timeout,
+                impersonate="chrome",
+            )
+            if response.status_code == 403:
+                raise RuntimeError(
+                    f"访问被站点拒绝：{url}。"
+                    "当前 Cookie 可能已失效，或 Cloudflare 要求同一浏览器/IP 指纹。"
+                )
+            response.raise_for_status()
+            response.encoding = response.encoding or "utf-8"
+            return response.text
+        except Exception as exc:
+            if isinstance(exc, RuntimeError):
+                raise
+            raise RuntimeError(f"抓取失败：{url}，网络错误：{exc}") from exc
+
     request = Request(
         url,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/126.0.0.0 Safari/537.36"
-            ),
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-            "Cache-Control": "no-cache",
-            "Referer": BASE_URL,
-        },
+        headers=headers,
     )
     try:
         with urlopen(request, timeout=timeout) as response:
@@ -197,3 +229,32 @@ def load_champion_pages_from_index_html(index_html: str) -> list[ChampionPage]:
         raise RuntimeError(f"没有从目录页 HTML 提取到英雄数据：{index_html}")
 
     return pages
+
+
+def download_champion_htmls_from_index(
+    index_html: str,
+    output_dir: str = "data/html/champions",
+    delay_seconds: float = 0.5,
+    limit: int | None = None,
+) -> int:
+    pages = load_champion_pages_from_index_html(index_html)
+    if limit is not None:
+        pages = pages[:limit]
+
+    root = Path(output_dir)
+    root.mkdir(parents=True, exist_ok=True)
+
+    count = 0
+    for page in pages:
+        target = root / f"{page.name}.html"
+        if target.exists():
+            print(f"skip existing {page.name} -> {target}")
+            continue
+
+        html = fetch_html(page.url)
+        target.write_text(html, encoding="utf-8", errors="replace")
+        count += 1
+        print(f"[{count}/{len(pages)}] saved {page.name} -> {target}")
+        sleep(delay_seconds)
+
+    return count

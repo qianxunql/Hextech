@@ -1,9 +1,11 @@
+from pathlib import Path
+
 from langchain_core.messages import SystemMessage
 from langchain_core.runnables import RunnableConfig
 
 from aiproject.config import get_settings
 from aiproject.llms import build_chat_model
-from aiproject.scraper import load_champion_pages_from_index_html
+from aiproject.scraper import load_champion_pages_from_index_html, parse_page_text
 from aiproject.state import AgentState
 from aiproject.vectorstore import get_vectorstore
 
@@ -32,7 +34,12 @@ def _exact_champion_context(question: str) -> list[tuple[str, str]]:
                 aliases.append(value.strip())
 
         if any(alias and alias.lower() in question_lower for alias in aliases):
-            matches.append((page.url, page.text))
+            local_detail = Path("data/html/champions") / f"{page.name}.html"
+            if local_detail.exists():
+                html = local_detail.read_text(encoding="utf-8", errors="replace")
+                matches.append((page.url, parse_page_text(html)))
+            else:
+                matches.append((page.url, page.text))
 
     return matches
 

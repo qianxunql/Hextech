@@ -50,6 +50,15 @@ $env:PYTHONPATH="src"
 uv run python -m aiproject.main ingest --html-dir data/html
 ```
 
+如果已经有可访问站点的浏览器 Cookie，可以临时设置 `APEXLOL_COOKIE`
+并批量下载英雄详情页：
+
+```powershell
+$env:PYTHONPATH="src"
+$env:APEXLOL_COOKIE="cf_clearance=..."
+uv run python -m aiproject.main download --index-html data/html/champions_index.html
+```
+
 调试时可以只抓几个：
 
 ```powershell
