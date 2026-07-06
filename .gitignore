@@ -12,3 +12,4 @@ data/html/champions/
 build/
 dist/
 *.spec
+.webserver.pid

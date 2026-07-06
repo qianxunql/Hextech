@@ -81,6 +81,18 @@ uv run hextech ask "海克斯大乱斗里亚索适合拿什么强化？"
 
 ## Desktop App
 
+启动本地 Web 界面：
+
+```powershell
+uv run hextech-web
+```
+
+然后打开：
+
+```text
+http://127.0.0.1:8765
+```
+
 启动桌面界面：
 
 ```powershell

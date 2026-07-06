@@ -16,6 +16,7 @@ dependencies = [
 [project.scripts]
 hextech = "aiproject.main:main"
 hextech-gui = "aiproject.gui:main"
+hextech-web = "aiproject.web:main"
 
 [build-system]
 requires = ["hatchling"]
