@@ -342,7 +342,7 @@ HTML = """<!doctype html>
           <button class="icon-button" type="button" title="新话题">+</button>
           <button class="icon-button" type="button" title="知识库">◎</button>
           <select aria-label="模型">
-            <option>qwen3:4b</option>
+            <option>deepseek-chat</option>
           </select>
           <button class="send" id="send" type="submit" title="发送">↑</button>
         </div>
@@ -481,8 +481,8 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
 
 def serve(host: str = HOST, port: int = PORT) -> None:
     os.chdir(app_dir())
-    os.environ.setdefault("AI_MODEL_PROVIDER", "ollama")
-    os.environ.setdefault("OLLAMA_MODEL", "qwen3:4b")
+    os.environ.setdefault("AI_MODEL_PROVIDER", "deepseek")
+    os.environ.setdefault("DEEPSEEK_MODEL", "deepseek-chat")
     server = ThreadingHTTPServer((host, port), HextechRequestHandler)
     print(f"Hextech web UI: http://{host}:{port}")
     server.serve_forever()

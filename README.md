@@ -21,10 +21,21 @@ src/aiproject/
 
 ## Quick Start
 
-先准备 Ollama 聊天模型和向量模型：
+先配置 DeepSeek API Key。复制 `.env.example` 为 `.env`，然后在 `.env` 里填写：
+
+```text
+DEEPSEEK_API_KEY=你的 DeepSeek API Key
+```
+
+`.env` 文件在项目根目录：
+
+```text
+D:\Study\AIProject\.env
+```
+
+如果还没有本地向量模型，准备 Ollama 向量模型：
 
 ```powershell
-ollama pull qwen3:4b
 ollama pull nomic-embed-text
 ```
 
@@ -111,12 +122,25 @@ uv run pyinstaller --noconsole --onedir --name HextechAssistant --paths src --ad
 dist\HextechAssistant\HextechAssistant.exe
 ```
 
-By default the project uses Ollama:
+By default the project uses DeepSeek for answering:
+
+```powershell
+AI_MODEL_PROVIDER=deepseek
+DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_API_KEY=
+```
+
+Ollama is still used for local embeddings by default:
+
+```powershell
+$env:OLLAMA_EMBEDDING_MODEL="nomic-embed-text"
+```
+
+To use Ollama for answering instead:
 
 ```powershell
 $env:AI_MODEL_PROVIDER="ollama"
 $env:OLLAMA_MODEL="qwen3:4b"
-$env:OLLAMA_EMBEDDING_MODEL="nomic-embed-text"
 ```
 
 To use DashScope Tongyi:

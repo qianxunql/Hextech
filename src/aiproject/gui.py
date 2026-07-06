@@ -31,8 +31,8 @@ class HextechAssistantApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         os.chdir(app_dir())
-        os.environ.setdefault("AI_MODEL_PROVIDER", "ollama")
-        os.environ.setdefault("OLLAMA_MODEL", "qwen3:4b")
+        os.environ.setdefault("AI_MODEL_PROVIDER", "deepseek")
+        os.environ.setdefault("DEEPSEEK_MODEL", "deepseek-chat")
 
         self.queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self.is_generating = False
@@ -149,12 +149,12 @@ class HextechAssistantApp(tk.Tk):
         self.model = ttk.Combobox(
             controls,
             style="Model.TCombobox",
-            values=["qwen3:4b"],
+            values=["deepseek-chat"],
             width=11,
             state="readonly",
             font=("Segoe UI", 15),
         )
-        self.model.set("qwen3:4b")
+        self.model.set("deepseek-chat")
         self.model.pack(side="left", padx=8, ipady=10)
 
         self.send_button = self._round_button(controls, "↑", self._submit, large=True)
