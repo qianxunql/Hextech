@@ -31,7 +31,6 @@ ollama pull nomic-embed-text
 抓取目录页下的全部英雄资料并入库：
 
 ```powershell
-$env:PYTHONPATH="src"
 uv run python -m aiproject.main ingest
 ```
 
@@ -39,14 +38,12 @@ uv run python -m aiproject.main ingest
 放到 `data/html/champions_index.html`，再从目录页本地副本导入：
 
 ```powershell
-$env:PYTHONPATH="src"
 uv run python -m aiproject.main ingest --index-html data/html/champions_index.html
 ```
 
 如果你另存为的是多个英雄详情页，也可以从本地目录导入：
 
 ```powershell
-$env:PYTHONPATH="src"
 uv run python -m aiproject.main ingest --html-dir data/html
 ```
 
@@ -54,7 +51,6 @@ uv run python -m aiproject.main ingest --html-dir data/html
 并批量下载英雄详情页：
 
 ```powershell
-$env:PYTHONPATH="src"
 $env:APEXLOL_COOKIE="cf_clearance=..."
 uv run python -m aiproject.main download --index-html data/html/champions_index.html
 ```
@@ -62,22 +58,25 @@ uv run python -m aiproject.main download --index-html data/html/champions_index.
 调试时可以只抓几个：
 
 ```powershell
-$env:PYTHONPATH="src"
 uv run python -m aiproject.main ingest --limit 3
 ```
 
 也可以指定英雄 URL 名：
 
 ```powershell
-$env:PYTHONPATH="src"
 uv run python -m aiproject.main ingest --champion Aatrox --champion Ahri
 ```
 
 提问：
 
 ```powershell
-$env:PYTHONPATH="src"
 uv run python -m aiproject.main ask "海克斯大乱斗里亚索适合拿什么强化？"
+```
+
+也可以使用脚本入口：
+
+```powershell
+uv run hextech ask "海克斯大乱斗里亚索适合拿什么强化？"
 ```
 
 By default the project uses Ollama:
