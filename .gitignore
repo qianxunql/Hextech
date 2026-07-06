@@ -8,3 +8,7 @@ data/chroma/
 data/html/*.html
 data/html/champions/
 !data/html/.gitkeep
+
+build/
+dist/
+*.spec
