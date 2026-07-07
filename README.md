@@ -146,21 +146,6 @@ Ollama is still used for local embeddings by default:
 $env:OLLAMA_EMBEDDING_MODEL="nomic-embed-text"
 ```
 
-To use Ollama for answering instead:
-
-```powershell
-$env:AI_MODEL_PROVIDER="ollama"
-$env:OLLAMA_MODEL="qwen3:4b"
-```
-
-To use DashScope Tongyi:
-
-```powershell
-$env:AI_MODEL_PROVIDER="dashscope"
-$env:DASHSCOPE_API_KEY="your-api-key"
-$env:DASHSCOPE_MODEL="qwen-plus"
-```
-
 ## LangGraph
 
 当前问答图：

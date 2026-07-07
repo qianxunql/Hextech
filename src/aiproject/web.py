@@ -841,10 +841,6 @@ HTML = """<!doctype html>
       <form class="composer" id="form">
         <textarea id="question" placeholder="Send a message" autocomplete="off"></textarea>
         <div class="controls">
-          <select id="modelSelect" aria-label="模型">
-            <option value="cloud">deepseek-chat</option>
-            <option value="local">qwen3:4b</option>
-          </select>
           <button class="send" id="send" type="submit" title="发送">↑</button>
         </div>
       </form>
@@ -877,7 +873,6 @@ HTML = """<!doctype html>
     const settingsButton = document.querySelector("#settingsButton");
     const themeButton = document.querySelector("#themeButton");
     const settingsBackdrop = document.querySelector("#settingsBackdrop");
-    const modelSelect = document.querySelector("#modelSelect");
     const apiKeyInput = document.querySelector("#apiKeyInput");
     const saveSettings = document.querySelector("#saveSettings");
     const settingsNote = document.querySelector("#settingsNote");
@@ -903,24 +898,10 @@ HTML = """<!doctype html>
     const modalAnswer = document.querySelector("#modalAnswer");
     const hextechTooltip = document.querySelector("#hextechTooltip");
 
-    const MODEL_CONFIGS = {
-      cloud: { provider: "deepseek", model: "deepseek-chat", label: "deepseek-chat" },
-      local: { provider: "ollama", model: "qwen3:4b", label: "qwen3:4b" },
-    };
     let championItems = [];
     let hextechItems = [];
     let modalRequestId = 0;
     let activeTooltipHextechId = "";
-
-    function currentMode() {
-      return modelSelect.value || localStorage.getItem("hextech:modelMode") || "cloud";
-    }
-
-    function applyModelMode(mode) {
-      const nextMode = MODEL_CONFIGS[mode] ? mode : "cloud";
-      localStorage.setItem("hextech:modelMode", nextMode);
-      modelSelect.value = nextMode;
-    }
 
     function applyTheme(theme) {
       const isDark = theme === "dark";
@@ -1156,7 +1137,7 @@ HTML = """<!doctype html>
         const response = await fetch("/api/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question, modelMode: currentMode() }),
+          body: JSON.stringify({ question }),
         });
         const data = await response.json();
         if (requestId !== modalRequestId) return;
@@ -1194,7 +1175,7 @@ HTML = """<!doctype html>
         const response = await fetch("/api/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question, modelMode: currentMode() }),
+          body: JSON.stringify({ question }),
         });
         const data = await response.json();
         if (requestId !== modalRequestId) return;
@@ -1263,7 +1244,7 @@ HTML = """<!doctype html>
         const response = await fetch("/api/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question, modelMode: currentMode() }),
+          body: JSON.stringify({ question }),
         });
         const data = await response.json();
         await setMessageWithHextechTerms(pending, data.answer || "没有得到回答。");
@@ -1290,10 +1271,6 @@ HTML = """<!doctype html>
       }
     });
 
-    modelSelect.addEventListener("change", () => {
-      applyModelMode(modelSelect.value);
-    });
-
     saveSettings.addEventListener("click", saveApiKey);
     aiTab.addEventListener("click", () => setActiveView("ai"));
     rosterTab.addEventListener("click", () => setActiveView("roster"));
@@ -1318,7 +1295,6 @@ HTML = """<!doctype html>
     });
 
     applyTheme(localStorage.getItem("hextech:theme") || "light");
-    applyModelMode(currentMode());
     input.focus();
     setReady();
   </script>
@@ -1336,10 +1312,8 @@ def app_dir() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def model_overrides(model_mode: str) -> dict[str, str]:
-    if model_mode == "local":
-        return {"model_provider": "ollama", "ollama_model": "qwen3:4b"}
-    return {"model_provider": "deepseek", "deepseek_model": "deepseek-chat"}
+def model_overrides() -> dict[str, str]:
+    return {"model_provider": "deepseek"}
 
 
 def champion_catalog() -> list[dict[str, str]]:
@@ -1476,8 +1450,7 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
             question = str(payload.get("question", "")).strip()
             if not question:
                 raise ValueError("question is required")
-            model_mode = str(payload.get("modelMode", "cloud")).strip().lower()
-            answer = run(question, overrides=model_overrides(model_mode))
+            answer = run(question, overrides=model_overrides())
             self._send_json({"answer": answer})
         except Exception as exc:  # noqa: BLE001 - returned to local UI
             self._send_json({"error": str(exc), "answer": f"出错了：{exc}"}, status=500)
