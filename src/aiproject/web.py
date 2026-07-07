@@ -496,8 +496,7 @@ HTML = """<!doctype html>
     }
 
     .champion-title,
-    .hextech-tier,
-    .hextech-desc {
+    .hextech-tier {
       margin-top: 2px;
       color: var(--muted);
       font-size: 12px;
@@ -1000,7 +999,6 @@ HTML = """<!doctype html>
           <div>
             <div class="hextech-name">${item.name}</div>
             <div class="hextech-tier">${item.tier}</div>
-            <div class="hextech-desc">${item.description || item.id}</div>
           </div>
         `;
         card.addEventListener("click", () => openHextechModal(item));
