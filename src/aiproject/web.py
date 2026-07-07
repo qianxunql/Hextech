@@ -89,19 +89,19 @@ HTML = """<!doctype html>
       height: 100vh;
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 56px 1fr;
+      grid-template-columns: 68px 1fr;
       grid-template-rows: 56px 1fr auto;
       transition: grid-template-columns 0.18s ease;
     }
 
     .app.nav-expanded {
-      grid-template-columns: 178px 1fr;
+      grid-template-columns: 206px 1fr;
     }
 
     .sidebar {
       grid-row: 1 / 4;
       display: grid;
-      grid-template-rows: 56px 1fr auto;
+      grid-template-rows: auto auto 1fr auto;
       background: color-mix(in srgb, var(--panel) 82%, var(--bg));
       border-right: 1px solid var(--line);
       overflow: hidden;
@@ -205,11 +205,12 @@ HTML = """<!doctype html>
       z-index: 3;
     }
 
+    .sidebar-back,
     .sidebar-toggle,
     .side-tab,
     .settings-trigger,
     .theme-trigger {
-      width: 100%;
+      width: calc(100% - 8px);
       height: 48px;
       border: 0;
       background: transparent;
@@ -217,11 +218,20 @@ HTML = """<!doctype html>
       font-size: 18px;
       line-height: 1;
       padding: 0;
+      margin: 4px;
+      border-radius: 8px;
       cursor: pointer;
       display: grid;
       grid-template-columns: 56px 1fr;
       align-items: center;
       text-align: left;
+    }
+
+    .sidebar-back {
+      height: 54px;
+      margin-top: 8px;
+      color: var(--text);
+      font-size: 24px;
     }
 
     .sidebar-toggle {
@@ -233,14 +243,14 @@ HTML = """<!doctype html>
       display: flex;
       flex-direction: column;
       gap: 4px;
-      padding: 10px 4px;
+      padding: 6px 0;
     }
 
     .side-bottom {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      padding: 8px 4px 16px;
+      padding: 8px 0 14px;
     }
 
     .nav-icon {
@@ -262,6 +272,7 @@ HTML = """<!doctype html>
       opacity: 0;
     }
 
+    .sidebar-back:hover,
     .sidebar-toggle:hover,
     .side-tab:hover,
     .settings-trigger:hover,
@@ -270,46 +281,43 @@ HTML = """<!doctype html>
       color: var(--text);
     }
 
-    .side-tab.active {
+    .side-tab.active,
+    .settings-trigger.active {
       background: var(--hover);
       color: var(--text);
       border-radius: 8px;
     }
 
-    .side-tab.active .nav-icon {
+    .side-tab.active .nav-icon,
+    .settings-trigger.active .nav-icon {
       color: #246b76;
     }
 
-    body.dark .side-tab.active .nav-icon {
+    body.dark .side-tab.active .nav-icon,
+    body.dark .settings-trigger.active .nav-icon {
       color: #7dd8e8;
     }
 
-    .settings-backdrop {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: flex-end;
-      justify-content: flex-start;
-      padding: 0 0 76px 74px;
-      background: rgba(0, 0, 0, 0.18);
-      z-index: 20;
+    .settings-view {
+      flex-direction: column;
+      overflow: auto;
+      padding: 8px 4px 40px;
     }
 
-    body.nav-expanded .settings-backdrop {
-      padding-left: 196px;
+    .settings-page-title {
+      margin: 0 0 18px;
+      font-size: 28px;
+      font-weight: 650;
     }
 
-    .settings-backdrop.open {
-      display: flex;
-    }
-
-    .settings-panel {
-      width: 320px;
+    .settings-panel,
+    .about-panel {
+      width: 100%;
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 18px;
-      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
-      padding: 18px;
+      border-radius: 8px;
+      box-shadow: 0 8px 26px var(--shadow);
+      padding: 22px;
     }
 
     .settings-title {
@@ -362,6 +370,46 @@ HTML = """<!doctype html>
       color: var(--muted);
       font-size: 12px;
       line-height: 1.4;
+    }
+
+    .about-panel {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 30px 1fr auto;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .about-icon {
+      color: var(--text);
+      font-size: 22px;
+      text-align: center;
+    }
+
+    .about-title {
+      font-size: 17px;
+      font-weight: 650;
+    }
+
+    .about-copy {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .github-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #0097a7;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .github-link:hover {
+      text-decoration: underline;
     }
 
     main {
@@ -570,7 +618,7 @@ HTML = """<!doctype html>
 
     .champion-modal {
       position: fixed;
-      inset: 0 0 0 56px;
+      inset: 0 0 0 68px;
       z-index: 40;
       display: none;
       grid-template-rows: auto 1fr;
@@ -579,7 +627,7 @@ HTML = """<!doctype html>
     }
 
     body.nav-expanded .champion-modal {
-      left: 178px;
+      left: 206px;
     }
 
     .champion-modal.open {
@@ -811,13 +859,10 @@ HTML = """<!doctype html>
 
     @media (max-width: 760px) {
       .app.nav-expanded {
-        grid-template-columns: 150px 1fr;
+        grid-template-columns: 168px 1fr;
       }
       body.nav-expanded .champion-modal {
-        left: 150px;
-      }
-      body.nav-expanded .settings-backdrop {
-        padding-left: 168px;
+        left: 168px;
       }
       main { padding: 18px 18px 4px; }
       .composer-wrap { padding: 8px 16px 22px; }
@@ -838,38 +883,49 @@ HTML = """<!doctype html>
         height: 128px;
         border-radius: 24px;
       }
+      .about-panel {
+        grid-template-columns: 30px 1fr;
+      }
+      .github-link {
+        grid-column: 2;
+        justify-self: start;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app">
     <aside class="sidebar" aria-label="主导航">
+      <button class="sidebar-back" id="globalBackButton" type="button" title="返回" aria-label="返回">
+        <span class="nav-icon">←</span>
+        <span class="nav-label">返回</span>
+      </button>
       <button class="sidebar-toggle" id="sidebarToggle" type="button" title="展开导航" aria-label="展开导航">
         <span class="nav-icon">☰</span>
         <span class="nav-label">菜单</span>
       </button>
       <nav class="side-nav" aria-label="主页栏目">
         <button class="side-tab active" id="aiTab" type="button" title="AI回答">
-          <span class="nav-icon">AI</span>
+          <span class="nav-icon">⌂</span>
           <span class="nav-label">AI回答</span>
         </button>
         <button class="side-tab" id="rosterTab" type="button" title="英雄名录">
-          <span class="nav-icon">英</span>
+          <span class="nav-icon">♙</span>
           <span class="nav-label">英雄名录</span>
         </button>
         <button class="side-tab" id="hextechTab" type="button" title="海克斯强化">
-          <span class="nav-icon">海</span>
+          <span class="nav-icon">⌕</span>
           <span class="nav-label">海克斯强化</span>
         </button>
       </nav>
       <div class="side-bottom">
-        <button class="settings-trigger" id="settingsButton" type="button" title="设置" aria-label="设置">
-          <span class="nav-icon">⚙</span>
-          <span class="nav-label">设置</span>
-        </button>
         <button class="theme-trigger" id="themeButton" type="button" title="夜间模式" aria-label="夜间模式">
           <span class="nav-icon" id="themeIcon">☾</span>
           <span class="nav-label" id="themeLabel">夜间模式</span>
+        </button>
+        <button class="settings-trigger" id="settingsButton" type="button" title="设置" aria-label="设置">
+          <span class="nav-icon">⚙</span>
+          <span class="nav-label">设置</span>
         </button>
       </div>
     </aside>
@@ -883,18 +939,6 @@ HTML = """<!doctype html>
         <span>Hextech</span>
       </div>
     </header>
-
-    <div class="settings-backdrop" id="settingsBackdrop">
-      <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-        <h2 class="settings-title" id="settingsTitle">设置</h2>
-        <label class="setting-field">
-          <span class="setting-label">DeepSeek API Key</span>
-          <input class="api-key-input" id="apiKeyInput" type="password" placeholder="sk-..." autocomplete="off" />
-        </label>
-        <button class="save-settings" id="saveSettings" type="button">保存 API Key</button>
-        <p class="settings-note" id="settingsNote">API Key 会保存到项目根目录的 .env 文件。</p>
-      </section>
-    </div>
 
     <main>
       <section class="workspace">
@@ -927,6 +971,27 @@ HTML = """<!doctype html>
             <input id="hextechSearch" type="search" placeholder="搜索海克斯中文名、评级或描述" autocomplete="off" />
           </label>
           <div class="hextech-grid" id="hextechGrid"></div>
+        </section>
+
+        <section class="view settings-view" id="settingsView">
+          <h1 class="settings-page-title">设置</h1>
+          <section class="settings-panel" aria-labelledby="settingsTitle">
+            <h2 class="settings-title" id="settingsTitle">DeepSeek API Key</h2>
+            <label class="setting-field">
+              <span class="setting-label">API Key</span>
+              <input class="api-key-input" id="apiKeyInput" type="password" placeholder="sk-..." autocomplete="off" />
+            </label>
+            <button class="save-settings" id="saveSettings" type="button">保存 API Key</button>
+            <p class="settings-note" id="settingsNote">API Key 会保存到 exe 同目录或项目根目录的 .env 文件。</p>
+          </section>
+          <section class="about-panel" aria-label="关于">
+            <div class="about-icon">ⓘ</div>
+            <div>
+              <div class="about-title">关于</div>
+              <div class="about-copy">版权所有 © 2026, qianxunql. 当前版本 1.0.0</div>
+            </div>
+            <a class="github-link" href="https://github.com/qianxunql/Hextech" target="_blank" rel="noreferrer">GitHub qianxunql/Hextech</a>
+          </section>
         </section>
       </section>
     </main>
@@ -965,12 +1030,12 @@ HTML = """<!doctype html>
     const send = document.querySelector("#send");
     const empty = document.querySelector("#empty");
     const messages = document.querySelector("#messages");
+    const globalBackButton = document.querySelector("#globalBackButton");
     const sidebarToggle = document.querySelector("#sidebarToggle");
     const settingsButton = document.querySelector("#settingsButton");
     const themeButton = document.querySelector("#themeButton");
     const themeIcon = document.querySelector("#themeIcon");
     const themeLabel = document.querySelector("#themeLabel");
-    const settingsBackdrop = document.querySelector("#settingsBackdrop");
     const apiKeyInput = document.querySelector("#apiKeyInput");
     const saveSettings = document.querySelector("#saveSettings");
     const settingsNote = document.querySelector("#settingsNote");
@@ -980,6 +1045,7 @@ HTML = """<!doctype html>
     const aiView = document.querySelector("#aiView");
     const rosterView = document.querySelector("#rosterView");
     const hextechView = document.querySelector("#hextechView");
+    const settingsView = document.querySelector("#settingsView");
     const composerWrap = document.querySelector(".composer-wrap");
     const championGrid = document.querySelector("#championGrid");
     const rosterCount = document.querySelector("#rosterCount");
@@ -1000,6 +1066,8 @@ HTML = """<!doctype html>
     let hextechItems = [];
     let modalRequestId = 0;
     let activeTooltipHextechId = "";
+    let activeViewName = "ai";
+    let previousViewName = "ai";
 
     function applyTheme(theme) {
       const isDark = theme === "dark";
@@ -1135,19 +1203,26 @@ HTML = """<!doctype html>
       }
     }
 
-    function setActiveView(view) {
+    function setActiveView(view, options = {}) {
       if (championModal.classList.contains("open")) {
         closeChampionModal();
       }
       const isRoster = view === "roster";
       const isHextech = view === "hextech";
       const isAi = view === "ai";
+      const isSettings = view === "settings";
+      if (view !== activeViewName && !options.skipHistory) {
+        previousViewName = activeViewName;
+      }
+      activeViewName = view;
       aiTab.classList.toggle("active", isAi);
       rosterTab.classList.toggle("active", isRoster);
       hextechTab.classList.toggle("active", isHextech);
+      settingsButton.classList.toggle("active", isSettings);
       aiView.classList.toggle("active", isAi);
       rosterView.classList.toggle("active", isRoster);
       hextechView.classList.toggle("active", isHextech);
+      settingsView.classList.toggle("active", isSettings);
       composerWrap.style.display = isAi ? "flex" : "none";
       if (isRoster && !championGrid.dataset.loaded) {
         loadChampions();
@@ -1155,6 +1230,25 @@ HTML = """<!doctype html>
       if (isHextech && !hextechGrid.dataset.loaded) {
         loadHextechs();
       }
+      if (isSettings) {
+        loadSettings();
+      }
+    }
+
+    function goBack() {
+      if (championModal.classList.contains("open")) {
+        closeChampionModal();
+        return;
+      }
+      if (activeViewName === "settings") {
+        setActiveView(previousViewName || "ai", { skipHistory: true });
+        return;
+      }
+      if (activeViewName !== "ai") {
+        setActiveView("ai");
+        return;
+      }
+      input.focus();
     }
 
     async function loadChampions() {
@@ -1367,10 +1461,7 @@ HTML = """<!doctype html>
       }
     });
 
-    settingsButton.addEventListener("click", () => {
-      settingsBackdrop.classList.add("open");
-      loadSettings();
-    });
+    settingsButton.addEventListener("click", () => setActiveView("settings"));
 
     themeButton.addEventListener("click", () => {
       applyTheme(document.body.classList.contains("dark") ? "light" : "dark");
@@ -1380,12 +1471,7 @@ HTML = """<!doctype html>
       applyNavExpanded(!app.classList.contains("nav-expanded"));
     });
 
-    settingsBackdrop.addEventListener("click", (event) => {
-      if (event.target === settingsBackdrop) {
-        settingsBackdrop.classList.remove("open");
-      }
-    });
-
+    globalBackButton.addEventListener("click", goBack);
     saveSettings.addEventListener("click", saveApiKey);
     aiTab.addEventListener("click", () => setActiveView("ai"));
     rosterTab.addEventListener("click", () => setActiveView("roster"));
