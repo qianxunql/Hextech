@@ -18,11 +18,7 @@ from aiproject.vectorstore import ingest_pages
 def run(question: str, overrides: dict | None = None) -> str:
     with settings_override(**(overrides or {})):
         result = graph.invoke({"messages": [HumanMessage(content=question)]})
-    answer = result["messages"][-1].content
-    sources = result.get("sources", [])
-    if sources:
-        answer = f"{answer}\n\n资料来源：\n" + "\n".join(f"- {source}" for source in sources)
-    return answer
+    return result["messages"][-1].content
 
 
 def ingest(
