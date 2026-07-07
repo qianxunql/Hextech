@@ -1107,6 +1107,7 @@ HTML = """<!doctype html>
         const card = document.createElement("button");
         card.className = "hextech-card";
         card.type = "button";
+        card.dataset.hextechId = item.id;
         card.innerHTML = `
           <img src="${item.image}" alt="${item.name}" loading="lazy" />
           <div>
@@ -1279,16 +1280,16 @@ HTML = """<!doctype html>
     hextechSearch.addEventListener("input", renderHextechs);
     modalBack.addEventListener("click", closeChampionModal);
     document.addEventListener("mouseover", (event) => {
-      const term = event.target.closest?.(".hextech-term");
+      const term = event.target.closest?.(".hextech-term, .hextech-card");
       if (term) showHextechTooltip(term, event);
     });
     document.addEventListener("mousemove", (event) => {
-      if (event.target.closest?.(".hextech-term")) {
+      if (event.target.closest?.(".hextech-term, .hextech-card")) {
         positionHextechTooltip(event);
       }
     });
     document.addEventListener("mouseout", (event) => {
-      const term = event.target.closest?.(".hextech-term");
+      const term = event.target.closest?.(".hextech-term, .hextech-card");
       if (term && !term.contains(event.relatedTarget)) {
         hideHextechTooltip();
       }
