@@ -260,6 +260,17 @@ HTML = """<!doctype html>
       font-weight: 650;
     }
 
+    .nav-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      vertical-align: middle;
+    }
+
     .nav-label {
       min-width: 0;
       overflow: hidden;
@@ -910,11 +921,11 @@ HTML = """<!doctype html>
           <span class="nav-label">AI回答</span>
         </button>
         <button class="side-tab" id="rosterTab" type="button" title="英雄名录">
-          <span class="nav-icon">♙</span>
+          <span class="nav-icon">👤︎</span>
           <span class="nav-label">英雄名录</span>
         </button>
         <button class="side-tab" id="hextechTab" type="button" title="海克斯强化">
-          <span class="nav-icon">⌕</span>
+          <span class="nav-icon">👻︎</span>
           <span class="nav-label">海克斯强化</span>
         </button>
       </nav>
@@ -924,7 +935,12 @@ HTML = """<!doctype html>
           <span class="nav-label" id="themeLabel">夜间模式</span>
         </button>
         <button class="settings-trigger" id="settingsButton" type="button" title="设置" aria-label="设置">
-          <span class="nav-icon">⚙</span>
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path>
+              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2.1 2.1 0 0 1-2.96 2.96l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V21a2.1 2.1 0 0 1-4.2 0v-.08A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2.1 2.1 0 0 1-2.96-2.96l.06-.06a1.7 1.7 0 0 0 .34-1.88 1.7 1.7 0 0 0-1.55-1.03H2.5a2.1 2.1 0 0 1 0-4.2h.08A1.7 1.7 0 0 0 4.1 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06A2.1 2.1 0 1 1 6.66 3.7l.06.06A1.7 1.7 0 0 0 8.6 4.1a1.7 1.7 0 0 0 1.03-1.55V2.5a2.1 2.1 0 0 1 4.2 0v.08A1.7 1.7 0 0 0 15 4.1a1.7 1.7 0 0 0 1.88-.34l.06-.06a2.1 2.1 0 1 1 2.96 2.96l-.06.06A1.7 1.7 0 0 0 19.4 8.6a1.7 1.7 0 0 0 1.55 1.03H21a2.1 2.1 0 0 1 0 4.2h-.08A1.7 1.7 0 0 0 19.4 15Z"></path>
+            </svg>
+          </span>
           <span class="nav-label">设置</span>
         </button>
       </div>
