@@ -33,6 +33,14 @@ HTML = """<!doctype html>
       --line: #eeeeee;
       --button: #ffffff;
       --button-disabled: #dddddd;
+      --card: #ffffff;
+      --field: #f7f7f7;
+      --hover: #f4f4f4;
+      --shadow: rgba(0, 0, 0, 0.08);
+      --modal-bg: #ffffff;
+      --detail-bg: #101010;
+      --detail-text: #f2f2f2;
+      --detail-muted: #cfcfcf;
     }
 
     * { box-sizing: border-box; }
@@ -44,6 +52,25 @@ HTML = """<!doctype html>
       color: var(--text);
       font-family: "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
       letter-spacing: 0;
+    }
+
+    body.dark {
+      color-scheme: dark;
+      --bg: #0f1012;
+      --panel: #1b1d21;
+      --text: #f3f3f3;
+      --muted: #a2a7af;
+      --line: #2a2e35;
+      --button: #2a2d33;
+      --button-disabled: #343840;
+      --card: #17191d;
+      --field: #191b20;
+      --hover: #23262c;
+      --shadow: rgba(0, 0, 0, 0.38);
+      --modal-bg: #0f1012;
+      --detail-bg: #050607;
+      --detail-text: #f6f6f6;
+      --detail-muted: #c8ccd3;
     }
 
     .app {
@@ -151,15 +178,15 @@ HTML = """<!doctype html>
     .window-actions {
       display: flex;
       gap: 34px;
-      color: #111;
+      color: var(--text);
       font-size: 25px;
       line-height: 1;
       user-select: none;
     }
 
-    .settings-trigger {
+    .settings-trigger,
+    .theme-trigger {
       position: fixed;
-      left: 28px;
       bottom: 28px;
       z-index: 10;
       width: 34px;
@@ -167,16 +194,21 @@ HTML = """<!doctype html>
       border: 0;
       border-radius: 50%;
       background: transparent;
-      color: #777777;
-      font-size: 27px;
+      color: var(--muted);
+      font-size: 24px;
       line-height: 34px;
       padding: 0;
       cursor: pointer;
     }
 
-    .settings-trigger:hover {
-      background: #f4f4f4;
-      color: #333333;
+    .settings-trigger { left: 28px; }
+
+    .theme-trigger { left: 70px; }
+
+    .settings-trigger:hover,
+    .theme-trigger:hover {
+      background: var(--hover);
+      color: var(--text);
     }
 
     .settings-backdrop {
@@ -186,7 +218,7 @@ HTML = """<!doctype html>
       align-items: flex-end;
       justify-content: flex-start;
       padding: 0 0 76px 28px;
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.18);
       z-index: 20;
     }
 
@@ -196,10 +228,10 @@ HTML = """<!doctype html>
 
     .settings-panel {
       width: 320px;
-      background: #ffffff;
+      background: var(--card);
       border: 1px solid var(--line);
       border-radius: 18px;
-      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.14);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
       padding: 18px;
     }
 
@@ -216,7 +248,7 @@ HTML = """<!doctype html>
     }
 
     .setting-label {
-      color: #4b4b4b;
+      color: var(--text);
       font-size: 13px;
       font-weight: 600;
     }
@@ -227,13 +259,13 @@ HTML = """<!doctype html>
       padding: 0 12px;
       border: 1px solid var(--line);
       border-radius: 12px;
-      background: #ffffff;
+      background: var(--card);
       color: var(--text);
       font: 14px "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
     }
 
     .api-key-input:focus {
-      border-color: #111111;
+      border-color: var(--text);
       outline: none;
     }
 
@@ -242,8 +274,8 @@ HTML = """<!doctype html>
       height: 42px;
       margin-top: 14px;
       border-radius: 12px;
-      background: #111111;
-      color: #ffffff;
+      background: var(--text);
+      color: var(--bg);
       font-size: 14px;
       cursor: pointer;
     }
@@ -281,15 +313,15 @@ HTML = """<!doctype html>
       height: 42px;
       border-radius: 21px;
       padding: 0 20px;
-      background: #f4f4f4;
-      color: #666666;
+      background: var(--hover);
+      color: var(--muted);
       font-size: 15px;
       cursor: pointer;
     }
 
     .tab-button.active {
-      background: #111111;
-      color: #ffffff;
+      background: var(--text);
+      color: var(--bg);
     }
 
     .view {
@@ -373,14 +405,14 @@ HTML = """<!doctype html>
       display: flex;
       align-items: center;
       gap: 10px;
-      border: 1px solid #eeeeee;
+      border: 1px solid var(--line);
       border-radius: 18px;
-      background: #f7f7f7;
+      background: var(--field);
       padding: 0 16px;
     }
 
     .catalog-search span {
-      color: #8a8a8a;
+      color: var(--muted);
       font-size: 18px;
     }
 
@@ -409,9 +441,9 @@ HTML = """<!doctype html>
 
     .champion-card,
     .hextech-card {
-      border: 1px solid #ededed;
+      border: 1px solid var(--line);
       border-radius: 14px;
-      background: #ffffff;
+      background: var(--card);
       color: var(--text);
       padding: 10px;
       height: auto;
@@ -424,7 +456,7 @@ HTML = """<!doctype html>
     .champion-card:hover,
     .hextech-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 12px 28px var(--shadow);
     }
 
     .champion-card img,
@@ -435,7 +467,7 @@ HTML = """<!doctype html>
       object-fit: cover;
       display: block;
       margin: 0 auto 8px;
-      background: #f2f2f2;
+      background: var(--panel);
     }
 
     .hextech-card {
@@ -475,7 +507,7 @@ HTML = """<!doctype html>
     }
 
     .hextech-tier {
-      color: #555555;
+      color: var(--text);
       font-weight: 600;
     }
 
@@ -485,7 +517,7 @@ HTML = """<!doctype html>
       z-index: 40;
       display: none;
       grid-template-rows: auto 1fr;
-      background: #ffffff;
+      background: var(--modal-bg);
       color: var(--text);
     }
 
@@ -506,8 +538,8 @@ HTML = """<!doctype html>
       width: 42px;
       height: 42px;
       border-radius: 50%;
-      background: #f4f4f4;
-      color: #111111;
+      background: var(--hover);
+      color: var(--text);
       font-size: 24px;
       cursor: pointer;
     }
@@ -557,6 +589,17 @@ HTML = """<!doctype html>
       padding: 4px 4px 48px;
     }
 
+    .modal-answer.detail-panel {
+      align-self: start;
+      max-height: calc(100vh - 136px);
+      padding: 22px 24px;
+      border-radius: 18px;
+      background: var(--detail-bg);
+      color: var(--detail-text);
+      border: 1px solid #2f343b;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+    }
+
     .composer-wrap {
       padding: 8px 48px 48px;
       display: flex;
@@ -587,7 +630,7 @@ HTML = """<!doctype html>
       padding: 0;
     }
 
-    textarea::placeholder { color: #9b9b9b; opacity: 1; }
+    textarea::placeholder { color: var(--muted); opacity: 1; }
 
     .controls {
       align-self: end;
@@ -603,7 +646,7 @@ HTML = """<!doctype html>
       outline: 0;
       height: 56px;
       background: var(--button);
-      color: #202020;
+      color: var(--text);
       font: 24px "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
     }
 
@@ -626,12 +669,12 @@ HTML = """<!doctype html>
       width: 56px;
       border-radius: 50%;
       background: var(--button-disabled);
-      color: #ffffff;
+      color: var(--bg);
       cursor: pointer;
     }
 
     .send.ready {
-      background: #111111;
+      background: var(--text);
     }
 
     .send:disabled {
@@ -641,6 +684,7 @@ HTML = """<!doctype html>
 
     @media (max-width: 760px) {
       .settings-trigger { left: 18px; bottom: 18px; }
+      .theme-trigger { left: 58px; bottom: 18px; }
       main { padding: 18px 18px 4px; }
       .composer-wrap { padding: 8px 16px 22px; }
       .composer {
@@ -677,6 +721,7 @@ HTML = """<!doctype html>
     </header>
 
     <button class="settings-trigger" id="settingsButton" type="button" title="设置" aria-label="设置">⚙</button>
+    <button class="theme-trigger" id="themeButton" type="button" title="夜间模式" aria-label="夜间模式">☾</button>
 
     <div class="settings-backdrop" id="settingsBackdrop">
       <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
@@ -767,6 +812,7 @@ HTML = """<!doctype html>
     const empty = document.querySelector("#empty");
     const messages = document.querySelector("#messages");
     const settingsButton = document.querySelector("#settingsButton");
+    const themeButton = document.querySelector("#themeButton");
     const settingsBackdrop = document.querySelector("#settingsBackdrop");
     const modelSelect = document.querySelector("#modelSelect");
     const apiKeyInput = document.querySelector("#apiKeyInput");
@@ -808,6 +854,15 @@ HTML = """<!doctype html>
       const nextMode = MODEL_CONFIGS[mode] ? mode : "cloud";
       localStorage.setItem("hextech:modelMode", nextMode);
       modelSelect.value = nextMode;
+    }
+
+    function applyTheme(theme) {
+      const isDark = theme === "dark";
+      document.body.classList.toggle("dark", isDark);
+      themeButton.textContent = isDark ? "☀" : "☾";
+      themeButton.title = isDark ? "日间模式" : "夜间模式";
+      themeButton.setAttribute("aria-label", themeButton.title);
+      localStorage.setItem("hextech:theme", isDark ? "dark" : "light");
     }
 
     async function loadSettings() {
@@ -955,6 +1010,7 @@ HTML = """<!doctype html>
     async function openChampionModal(champion) {
       championModal.classList.add("open");
       championModal.setAttribute("aria-hidden", "false");
+      modalAnswer.classList.remove("detail-panel");
       modalTitle.textContent = "海克斯推荐";
       modalImage.src = champion.image;
       modalImage.alt = champion.name;
@@ -979,12 +1035,14 @@ HTML = """<!doctype html>
     function closeChampionModal() {
       championModal.classList.remove("open");
       championModal.setAttribute("aria-hidden", "true");
+      modalAnswer.classList.remove("detail-panel");
       modalAnswer.textContent = "";
     }
 
     function openHextechModal(item) {
       championModal.classList.add("open");
       championModal.setAttribute("aria-hidden", "false");
+      modalAnswer.classList.add("detail-panel");
       modalTitle.textContent = "海克斯详情";
       modalImage.src = item.image;
       modalImage.alt = item.name;
@@ -1033,6 +1091,10 @@ HTML = """<!doctype html>
       loadSettings();
     });
 
+    themeButton.addEventListener("click", () => {
+      applyTheme(document.body.classList.contains("dark") ? "light" : "dark");
+    });
+
     settingsBackdrop.addEventListener("click", (event) => {
       if (event.target === settingsBackdrop) {
         settingsBackdrop.classList.remove("open");
@@ -1051,6 +1113,7 @@ HTML = """<!doctype html>
     hextechSearch.addEventListener("input", renderHextechs);
     modalBack.addEventListener("click", closeChampionModal);
 
+    applyTheme(localStorage.getItem("hextech:theme") || "light");
     applyModelMode(currentMode());
     input.focus();
     setReady();
