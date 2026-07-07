@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import html as html_lib
 from html.parser import HTMLParser
 import json
 import os
@@ -18,12 +19,23 @@ except ImportError:  # pragma: no cover - optional fallback
 
 BASE_URL = "https://apexlol.info"
 CHAMPIONS_INDEX_URL = f"{BASE_URL}/zh/champions"
+HEXTECH_INDEX_URL = f"{BASE_URL}/zh/hextech"
 
 
 @dataclass(frozen=True)
 class ChampionPage:
     name: str
     url: str
+    text: str
+
+
+@dataclass(frozen=True)
+class HextechPage:
+    hextech_id: str
+    name: str
+    tier: str
+    url: str
+    description: str
     text: str
 
 
@@ -139,6 +151,10 @@ def champion_url(name: str) -> str:
     return f"{CHAMPIONS_INDEX_URL}/{name.strip()}"
 
 
+def hextech_url(hextech_id: str) -> str:
+    return f"{HEXTECH_INDEX_URL}/{hextech_id.strip()}"
+
+
 def parse_page_text(html: str) -> str:
     parser = TextParser()
     parser.feed(html)
@@ -231,6 +247,59 @@ def load_champion_pages_from_index_html(index_html: str) -> list[ChampionPage]:
     return pages
 
 
+def load_hextech_pages_from_index_html(index_html: str) -> list[HextechPage]:
+    path = Path(index_html)
+    if not path.exists():
+        raise RuntimeError(f"海克斯目录页 HTML 不存在：{index_html}")
+
+    html = path.read_text(encoding="utf-8", errors="replace")
+    normalized = html.replace('\\"', '"')
+    card_pattern = re.compile(
+        r'<a class="[^"]*?" href="https://apexlol\.info/zh/hextech/(?P<id>\d+)"[^>]*>'
+        r'.*?<span[^>]*>(?P<tier>[^<]+)</span>'
+        r'<h3[^>]*>(?P<name>[^<]+)</h3>'
+        r'<p[^>]*>(?P<description>.*?)</p>',
+        re.S,
+    )
+
+    pages: list[HextechPage] = []
+    seen: set[str] = set()
+    for match in card_pattern.finditer(normalized):
+        hextech_id = match.group("id")
+        if hextech_id in seen:
+            continue
+        seen.add(hextech_id)
+
+        name = html_lib.unescape(match.group("name")).strip()
+        tier = html_lib.unescape(match.group("tier")).strip()
+        description = html_lib.unescape(re.sub(r"<[^>]+>", "", match.group("description"))).strip()
+        url = hextech_url(hextech_id)
+        text = "\n".join(
+            [
+                f"海克斯ID：{hextech_id}",
+                f"中文名：{name}",
+                f"评级：{tier}",
+                f"描述：{description}",
+                f"详情页：{url}",
+            ]
+        )
+        pages.append(
+            HextechPage(
+                hextech_id=hextech_id,
+                name=name,
+                tier=tier,
+                url=url,
+                description=description,
+                text=text,
+            )
+        )
+
+    if not pages:
+        raise RuntimeError(f"没有从海克斯目录页 HTML 提取到数据：{index_html}")
+
+    return pages
+
+
 def download_champion_htmls_from_index(
     index_html: str,
     output_dir: str = "data/html/champions",
@@ -255,6 +324,35 @@ def download_champion_htmls_from_index(
         target.write_text(html, encoding="utf-8", errors="replace")
         count += 1
         print(f"[{count}/{len(pages)}] saved {page.name} -> {target}")
+        sleep(delay_seconds)
+
+    return count
+
+
+def download_hextech_htmls_from_index(
+    index_html: str,
+    output_dir: str = "data/html/hextech",
+    delay_seconds: float = 0.35,
+    limit: int | None = None,
+) -> int:
+    pages = load_hextech_pages_from_index_html(index_html)
+    if limit is not None:
+        pages = pages[:limit]
+
+    root = Path(output_dir)
+    root.mkdir(parents=True, exist_ok=True)
+
+    count = 0
+    for page in pages:
+        target = root / f"{page.hextech_id}.html"
+        if target.exists():
+            print(f"skip existing {page.hextech_id} -> {target}")
+            continue
+
+        html = fetch_html(page.url)
+        target.write_text(html, encoding="utf-8", errors="replace")
+        count += 1
+        print(f"[{count}/{len(pages)}] saved {page.hextech_id} {page.name} -> {target}")
         sleep(delay_seconds)
 
     return count

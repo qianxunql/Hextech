@@ -6,6 +6,7 @@ from aiproject.config import settings_override
 from aiproject.graph import graph
 from aiproject.scraper import (
     download_champion_htmls_from_index,
+    download_hextech_htmls_from_index,
     load_champion_pages_from_html_dir,
     load_champion_pages_from_index_html,
     scrape_champion_pages,
@@ -52,6 +53,15 @@ def download(index_html: str, output_dir: str, limit: int | None = None) -> None
     print(f"已下载 {count} 个英雄详情页到 {output_dir}。")
 
 
+def download_hextech(index_html: str, output_dir: str, limit: int | None = None) -> None:
+    count = download_hextech_htmls_from_index(
+        index_html=index_html,
+        output_dir=output_dir,
+        limit=limit,
+    )
+    print(f"已下载 {count} 个海克斯详情页到 {output_dir}。")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="英雄联盟海克斯大乱斗助手")
     subparsers = parser.add_subparsers(dest="command")
@@ -69,6 +79,15 @@ def main() -> None:
     download_parser.add_argument("--index-html", default="data/html/champions_index.html", help="英雄目录页 HTML")
     download_parser.add_argument("--output-dir", default="data/html/champions", help="保存英雄详情页 HTML 的目录")
     download_parser.add_argument("--limit", type=int, help="限制下载数量，调试时很有用")
+
+    download_hextech_parser = subparsers.add_parser("download-hextech", help="从海克斯目录页批量下载详情页 HTML")
+    download_hextech_parser.add_argument(
+        "--index-html",
+        default="海克斯强化列表 _ ARAM Hextech Wiki.html",
+        help="海克斯目录页 HTML",
+    )
+    download_hextech_parser.add_argument("--output-dir", default="data/html/hextech", help="保存海克斯详情页 HTML 的目录")
+    download_hextech_parser.add_argument("--limit", type=int, help="限制下载数量，调试时很有用")
 
     parser.add_argument("legacy_question", nargs="?", help="兼容旧用法：直接传问题")
     args = parser.parse_args()
@@ -88,6 +107,14 @@ def main() -> None:
 
     if args.command == "download":
         download(
+            index_html=args.index_html,
+            output_dir=args.output_dir,
+            limit=args.limit,
+        )
+        return
+
+    if args.command == "download-hextech":
+        download_hextech(
             index_html=args.index_html,
             output_dir=args.output_dir,
             limit=args.limit,

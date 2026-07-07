@@ -7,9 +7,12 @@ __pycache__/
 data/chroma/
 data/html/*.html
 data/html/champions/
+data/html/hextech/
 !data/html/.gitkeep
 英雄名录 _ ARAM Hextech Wiki.html
 英雄名录 _ ARAM Hextech Wiki_files/
+海克斯强化列表 _ ARAM Hextech Wiki.html
+海克斯强化列表 _ ARAM Hextech Wiki_files/
 
 build/
 dist/

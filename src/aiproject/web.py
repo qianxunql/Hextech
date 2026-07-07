@@ -10,7 +10,7 @@ import sys
 from urllib.parse import unquote, urlparse
 
 from aiproject.main import run
-from aiproject.scraper import load_champion_pages_from_index_html
+from aiproject.scraper import load_champion_pages_from_index_html, load_hextech_pages_from_index_html, parse_page_text
 
 
 HOST = "127.0.0.1"
@@ -343,7 +343,8 @@ HTML = """<!doctype html>
       padding: 4px 2px;
     }
 
-    .roster-view {
+    .roster-view,
+    .hextech-view {
       flex-direction: column;
       overflow: hidden;
     }
@@ -366,7 +367,35 @@ HTML = """<!doctype html>
       font-size: 13px;
     }
 
-    .champion-grid {
+    .catalog-search {
+      width: 100%;
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid #eeeeee;
+      border-radius: 18px;
+      background: #f7f7f7;
+      padding: 0 16px;
+    }
+
+    .catalog-search span {
+      color: #8a8a8a;
+      font-size: 18px;
+    }
+
+    .catalog-search input {
+      width: 100%;
+      height: 48px;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font: 15px "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
+    }
+
+    .champion-grid,
+    .hextech-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
       gap: 14px;
@@ -374,7 +403,12 @@ HTML = """<!doctype html>
       padding: 2px 4px 24px;
     }
 
-    .champion-card {
+    .hextech-grid {
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    }
+
+    .champion-card,
+    .hextech-card {
       border: 1px solid #ededed;
       border-radius: 14px;
       background: #ffffff;
@@ -387,12 +421,14 @@ HTML = """<!doctype html>
       transition: transform 0.16s ease, box-shadow 0.16s ease;
     }
 
-    .champion-card:hover {
+    .champion-card:hover,
+    .hextech-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
     }
 
-    .champion-card img {
+    .champion-card img,
+    .hextech-card img {
       width: 72px;
       height: 72px;
       border-radius: 16px;
@@ -402,7 +438,24 @@ HTML = """<!doctype html>
       background: #f2f2f2;
     }
 
-    .champion-name {
+    .hextech-card {
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 10px;
+      text-align: left;
+      align-items: center;
+      min-height: 92px;
+    }
+
+    .hextech-card img {
+      width: 54px;
+      height: 54px;
+      border-radius: 12px;
+      margin: 0;
+    }
+
+    .champion-name,
+    .hextech-name {
       font-size: 14px;
       font-weight: 650;
       white-space: nowrap;
@@ -410,13 +463,20 @@ HTML = """<!doctype html>
       text-overflow: ellipsis;
     }
 
-    .champion-title {
+    .champion-title,
+    .hextech-tier,
+    .hextech-desc {
       margin-top: 2px;
       color: var(--muted);
       font-size: 12px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .hextech-tier {
+      color: #555555;
+      font-weight: 600;
     }
 
     .champion-modal {
@@ -635,6 +695,7 @@ HTML = """<!doctype html>
         <nav class="home-tabs" aria-label="主页栏目">
           <button class="tab-button active" id="aiTab" type="button">AI回答</button>
           <button class="tab-button" id="rosterTab" type="button">英雄名录</button>
+          <button class="tab-button" id="hextechTab" type="button">海克斯强化</button>
         </nav>
 
         <section class="view active" id="aiView">
@@ -649,7 +710,23 @@ HTML = """<!doctype html>
             <h1 class="roster-title">英雄名录</h1>
             <span class="roster-count" id="rosterCount">加载中</span>
           </div>
+          <label class="catalog-search">
+            <span>⌕</span>
+            <input id="championSearch" type="search" placeholder="搜索英雄中文名、称号或 ID" autocomplete="off" />
+          </label>
           <div class="champion-grid" id="championGrid"></div>
+        </section>
+
+        <section class="view hextech-view" id="hextechView">
+          <div class="roster-head">
+            <h1 class="roster-title">海克斯强化</h1>
+            <span class="roster-count" id="hextechCount">加载中</span>
+          </div>
+          <label class="catalog-search">
+            <span>⌕</span>
+            <input id="hextechSearch" type="search" placeholder="搜索海克斯中文名、评级或描述" autocomplete="off" />
+          </label>
+          <div class="hextech-grid" id="hextechGrid"></div>
         </section>
       </section>
     </main>
@@ -697,11 +774,17 @@ HTML = """<!doctype html>
     const settingsNote = document.querySelector("#settingsNote");
     const aiTab = document.querySelector("#aiTab");
     const rosterTab = document.querySelector("#rosterTab");
+    const hextechTab = document.querySelector("#hextechTab");
     const aiView = document.querySelector("#aiView");
     const rosterView = document.querySelector("#rosterView");
+    const hextechView = document.querySelector("#hextechView");
     const composerWrap = document.querySelector(".composer-wrap");
     const championGrid = document.querySelector("#championGrid");
     const rosterCount = document.querySelector("#rosterCount");
+    const championSearch = document.querySelector("#championSearch");
+    const hextechGrid = document.querySelector("#hextechGrid");
+    const hextechCount = document.querySelector("#hextechCount");
+    const hextechSearch = document.querySelector("#hextechSearch");
     const championModal = document.querySelector("#championModal");
     const modalBack = document.querySelector("#modalBack");
     const modalTitle = document.querySelector("#modalTitle");
@@ -714,6 +797,8 @@ HTML = """<!doctype html>
       cloud: { provider: "deepseek", model: "deepseek-chat", label: "deepseek-chat" },
       local: { provider: "ollama", model: "qwen3:4b", label: "qwen3:4b" },
     };
+    let championItems = [];
+    let hextechItems = [];
 
     function currentMode() {
       return modelSelect.value || localStorage.getItem("hextech:modelMode") || "cloud";
@@ -775,13 +860,20 @@ HTML = """<!doctype html>
 
     function setActiveView(view) {
       const isRoster = view === "roster";
-      aiTab.classList.toggle("active", !isRoster);
+      const isHextech = view === "hextech";
+      const isAi = view === "ai";
+      aiTab.classList.toggle("active", isAi);
       rosterTab.classList.toggle("active", isRoster);
-      aiView.classList.toggle("active", !isRoster);
+      hextechTab.classList.toggle("active", isHextech);
+      aiView.classList.toggle("active", isAi);
       rosterView.classList.toggle("active", isRoster);
-      composerWrap.style.display = isRoster ? "none" : "flex";
+      hextechView.classList.toggle("active", isHextech);
+      composerWrap.style.display = isAi ? "flex" : "none";
       if (isRoster && !championGrid.dataset.loaded) {
         loadChampions();
+      }
+      if (isHextech && !hextechGrid.dataset.loaded) {
+        loadHextechs();
       }
     }
 
@@ -790,16 +882,22 @@ HTML = """<!doctype html>
       try {
         const response = await fetch("/api/champions");
         const data = await response.json();
-        renderChampions(data.champions || []);
+        championItems = data.champions || [];
+        renderChampions();
       } catch (error) {
         rosterCount.textContent = "加载失败";
         championGrid.textContent = `加载英雄名录失败：${error}`;
       }
     }
 
-    function renderChampions(champions) {
+    function renderChampions() {
       championGrid.dataset.loaded = "true";
-      rosterCount.textContent = `${champions.length} 位英雄`;
+      const keyword = championSearch.value.trim().toLowerCase();
+      const champions = championItems.filter((champion) => {
+        const haystack = `${champion.name} ${champion.title || ""} ${champion.id}`.toLowerCase();
+        return haystack.includes(keyword);
+      });
+      rosterCount.textContent = `${champions.length} / ${championItems.length} 位英雄`;
       championGrid.textContent = "";
       champions.forEach((champion) => {
         const card = document.createElement("button");
@@ -812,6 +910,45 @@ HTML = """<!doctype html>
         `;
         card.addEventListener("click", () => openChampionModal(champion));
         championGrid.appendChild(card);
+      });
+    }
+
+    async function loadHextechs() {
+      hextechCount.textContent = "加载中";
+      try {
+        const response = await fetch("/api/hextech");
+        const data = await response.json();
+        hextechItems = data.hextech || [];
+        renderHextechs();
+      } catch (error) {
+        hextechCount.textContent = "加载失败";
+        hextechGrid.textContent = `加载海克斯强化失败：${error}`;
+      }
+    }
+
+    function renderHextechs() {
+      hextechGrid.dataset.loaded = "true";
+      const keyword = hextechSearch.value.trim().toLowerCase();
+      const hextechs = hextechItems.filter((item) => {
+        const haystack = `${item.name} ${item.tier} ${item.description} ${item.id}`.toLowerCase();
+        return haystack.includes(keyword);
+      });
+      hextechCount.textContent = `${hextechs.length} / ${hextechItems.length} 条强化`;
+      hextechGrid.textContent = "";
+      hextechs.forEach((item) => {
+        const card = document.createElement("button");
+        card.className = "hextech-card";
+        card.type = "button";
+        card.innerHTML = `
+          <img src="${item.image}" alt="${item.name}" loading="lazy" />
+          <div>
+            <div class="hextech-name">${item.name}</div>
+            <div class="hextech-tier">${item.tier}</div>
+            <div class="hextech-desc">${item.description || item.id}</div>
+          </div>
+        `;
+        card.addEventListener("click", () => openHextechModal(item));
+        hextechGrid.appendChild(card);
       });
     }
 
@@ -843,6 +980,17 @@ HTML = """<!doctype html>
       championModal.classList.remove("open");
       championModal.setAttribute("aria-hidden", "true");
       modalAnswer.textContent = "";
+    }
+
+    function openHextechModal(item) {
+      championModal.classList.add("open");
+      championModal.setAttribute("aria-hidden", "false");
+      modalTitle.textContent = "海克斯详情";
+      modalImage.src = item.image;
+      modalImage.alt = item.name;
+      modalName.textContent = item.name;
+      modalSubtitle.textContent = `${item.tier} · ${item.id}`;
+      modalAnswer.textContent = item.detail || item.description || "暂无详情。";
     }
 
     input.addEventListener("input", setReady);
@@ -898,6 +1046,9 @@ HTML = """<!doctype html>
     saveSettings.addEventListener("click", saveApiKey);
     aiTab.addEventListener("click", () => setActiveView("ai"));
     rosterTab.addEventListener("click", () => setActiveView("roster"));
+    hextechTab.addEventListener("click", () => setActiveView("hextech"));
+    championSearch.addEventListener("input", renderChampions);
+    hextechSearch.addEventListener("input", renderHextechs);
     modalBack.addEventListener("click", closeChampionModal);
 
     applyModelMode(currentMode());
@@ -950,7 +1101,56 @@ def champion_catalog() -> list[dict[str, str]]:
             }
         )
 
-    return champions
+    return sorted(champions, key=lambda item: item["name"])
+
+
+def _compact_detail_text(text: str, fallback: str) -> str:
+    lines: list[str] = []
+    seen: set[str] = set()
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line in seen:
+            continue
+        seen.add(line)
+        lines.append(line)
+        if len("\n".join(lines)) > 2200:
+            break
+    detail = "\n".join(lines).strip()
+    return detail or fallback
+
+
+def hextech_catalog() -> list[dict[str, str]]:
+    try:
+        pages = load_hextech_pages_from_index_html("海克斯强化列表 _ ARAM Hextech Wiki.html")
+    except RuntimeError:
+        return []
+
+    image_root = Path("海克斯强化列表 _ ARAM Hextech Wiki_files")
+    html_root = Path("data/html/hextech")
+    tier_order = {"棱彩阶": 0, "黄金阶": 1, "白银阶": 2}
+    hextechs: list[dict[str, str]] = []
+    for page in pages:
+        image_path = image_root / f"{page.hextech_id}.webp"
+        detail = page.description
+        detail_path = html_root / f"{page.hextech_id}.html"
+        if detail_path.exists():
+            detail = _compact_detail_text(
+                parse_page_text(detail_path.read_text(encoding="utf-8", errors="replace")),
+                page.description,
+            )
+        hextechs.append(
+            {
+                "id": page.hextech_id,
+                "name": page.name,
+                "tier": page.tier,
+                "ratingRank": str(tier_order.get(page.tier, 99)),
+                "description": page.description,
+                "detail": detail,
+                "image": f"/assets/hextech/{page.hextech_id}.webp" if image_path.exists() else "",
+            }
+        )
+
+    return sorted(hextechs, key=lambda item: (int(item["ratingRank"]), item["name"]))
 
 
 def read_env_value(key: str, path: str = ".env") -> str:
@@ -999,6 +1199,9 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/champions":
             self._send_json({"champions": champion_catalog()})
             return
+        if path == "/api/hextech":
+            self._send_json({"hextech": hextech_catalog()})
+            return
         if path == "/health":
             self._send_json({"ok": True})
             return
@@ -1007,6 +1210,9 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
             return
         if path.startswith("/assets/champions/"):
             self._send_champion_image(path)
+            return
+        if path.startswith("/assets/hextech/"):
+            self._send_hextech_image(path)
             return
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
@@ -1070,6 +1276,24 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
             return
 
         image_path = Path("英雄名录 _ ARAM Hextech Wiki_files") / filename
+        if not image_path.exists():
+            self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+            return
+
+        body = image_path.read_bytes()
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", mimetypes.guess_type(filename)[0] or "image/webp")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_hextech_image(self, path: str) -> None:
+        filename = Path(unquote(path)).name
+        if not filename.endswith(".webp") or "/" in filename or "\\" in filename:
+            self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+            return
+
+        image_path = Path("海克斯强化列表 _ ARAM Hextech Wiki_files") / filename
         if not image_path.exists():
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
