@@ -599,6 +599,66 @@ HTML = """<!doctype html>
       box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
     }
 
+    .hextech-term {
+      display: inline;
+      border-bottom: 1px dotted currentColor;
+      color: #6f6fff;
+      cursor: help;
+      font-weight: 650;
+    }
+
+    body.dark .hextech-term {
+      color: #9da5ff;
+    }
+
+    .hextech-tooltip {
+      position: fixed;
+      z-index: 80;
+      width: min(360px, calc(100vw - 24px));
+      pointer-events: none;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+      padding: 14px;
+    }
+
+    .hextech-tooltip[hidden] {
+      display: none;
+    }
+
+    .tooltip-head {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .tooltip-head img {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .tooltip-name {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .tooltip-tier,
+    .tooltip-desc {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .tooltip-desc {
+      color: var(--text);
+    }
+
     .composer-wrap {
       padding: 8px 48px 48px;
       display: flex;
@@ -802,6 +862,8 @@ HTML = """<!doctype html>
         <article class="modal-answer" id="modalAnswer">正在生成推荐...</article>
       </div>
     </section>
+
+    <div class="hextech-tooltip" id="hextechTooltip" hidden></div>
   </div>
 
   <script>
@@ -837,6 +899,7 @@ HTML = """<!doctype html>
     const modalName = document.querySelector("#modalName");
     const modalSubtitle = document.querySelector("#modalSubtitle");
     const modalAnswer = document.querySelector("#modalAnswer");
+    const hextechTooltip = document.querySelector("#hextechTooltip");
 
     const MODEL_CONFIGS = {
       cloud: { provider: "deepseek", model: "deepseek-chat", label: "deepseek-chat" },
@@ -845,6 +908,7 @@ HTML = """<!doctype html>
     let championItems = [];
     let hextechItems = [];
     let modalRequestId = 0;
+    let activeTooltipHextechId = "";
 
     function currentMode() {
       return modelSelect.value || localStorage.getItem("hextech:modelMode") || "cloud";
@@ -913,6 +977,64 @@ HTML = """<!doctype html>
       return node;
     }
 
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function escapeRegExp(value) {
+      const slash = String.fromCharCode(92);
+      const specials = new Set([slash, ".", "*", "+", "?", "^", "$", "{", "}", "(", ")", "|", "[", "]"]);
+      return Array.from(String(value))
+        .map((char) => specials.has(char) ? slash + char : char)
+        .join("");
+    }
+
+    async function ensureHextechItems() {
+      if (hextechItems.length) return hextechItems;
+      const response = await fetch("/api/hextech");
+      const data = await response.json();
+      hextechItems = data.hextech || [];
+      return hextechItems;
+    }
+
+    function linkifyHextechTerms(text) {
+      if (!hextechItems.length) {
+        return escapeHtml(text).replaceAll("\n", "<br>");
+      }
+      const byName = new Map();
+      hextechItems.forEach((item) => {
+        if (item.name && item.name.length >= 2) {
+          byName.set(item.name, item);
+        }
+      });
+      const names = Array.from(byName.keys()).sort((a, b) => b.length - a.length);
+      if (!names.length) {
+        return escapeHtml(text).replaceAll("\n", "<br>");
+      }
+      const pattern = new RegExp(names.map(escapeRegExp).join("|"), "g");
+      return escapeHtml(text)
+        .replace(pattern, (match) => {
+          const item = byName.get(match);
+          if (!item) return match;
+          return `<span class="hextech-term" data-hextech-id="${escapeHtml(item.id)}">${match}</span>`;
+        })
+        .replaceAll("\n", "<br>");
+    }
+
+    async function setModalAnswerWithHextechTerms(text) {
+      try {
+        await ensureHextechItems();
+        modalAnswer.innerHTML = linkifyHextechTerms(text);
+      } catch {
+        modalAnswer.textContent = text;
+      }
+    }
+
     function setActiveView(view) {
       const isRoster = view === "roster";
       const isHextech = view === "hextech";
@@ -971,9 +1093,7 @@ HTML = """<!doctype html>
     async function loadHextechs() {
       hextechCount.textContent = "加载中";
       try {
-        const response = await fetch("/api/hextech");
-        const data = await response.json();
-        hextechItems = data.hextech || [];
+        await ensureHextechItems();
         renderHextechs();
       } catch (error) {
         hextechCount.textContent = "加载失败";
@@ -1027,7 +1147,7 @@ HTML = """<!doctype html>
         });
         const data = await response.json();
         if (requestId !== modalRequestId) return;
-        modalAnswer.textContent = data.answer || "没有得到回答。";
+        await setModalAnswerWithHextechTerms(data.answer || "没有得到回答。");
       } catch (error) {
         if (requestId !== modalRequestId) return;
         modalAnswer.textContent = `出错了：${error}`;
@@ -1040,6 +1160,7 @@ HTML = """<!doctype html>
       championModal.setAttribute("aria-hidden", "true");
       modalAnswer.classList.remove("detail-panel");
       modalAnswer.textContent = "";
+      hideHextechTooltip();
     }
 
     async function openHextechModal(item) {
@@ -1063,11 +1184,46 @@ HTML = """<!doctype html>
         });
         const data = await response.json();
         if (requestId !== modalRequestId) return;
-        modalAnswer.textContent = data.answer || "没有得到回答。";
+        await setModalAnswerWithHextechTerms(data.answer || "没有得到回答。");
       } catch (error) {
         if (requestId !== modalRequestId) return;
         modalAnswer.textContent = `出错了：${error}`;
       }
+    }
+
+    function positionHextechTooltip(event) {
+      if (hextechTooltip.hidden) return;
+      const gap = 14;
+      const rect = hextechTooltip.getBoundingClientRect();
+      const left = Math.min(event.clientX + gap, window.innerWidth - rect.width - 12);
+      const top = Math.min(event.clientY + gap, window.innerHeight - rect.height - 12);
+      hextechTooltip.style.left = `${Math.max(12, left)}px`;
+      hextechTooltip.style.top = `${Math.max(12, top)}px`;
+    }
+
+    function showHextechTooltip(term, event) {
+      const item = hextechItems.find((hextech) => hextech.id === term.dataset.hextechId);
+      if (!item) return;
+      if (activeTooltipHextechId !== item.id) {
+        activeTooltipHextechId = item.id;
+        hextechTooltip.innerHTML = `
+          <div class="tooltip-head">
+            <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" />
+            <div>
+              <div class="tooltip-name">${escapeHtml(item.name)}</div>
+              <div class="tooltip-tier">${escapeHtml(item.tier)} · ${escapeHtml(item.id)}</div>
+            </div>
+          </div>
+          <div class="tooltip-desc">${escapeHtml(item.description || "暂无描述")}</div>
+        `;
+      }
+      hextechTooltip.hidden = false;
+      positionHextechTooltip(event);
+    }
+
+    function hideHextechTooltip() {
+      activeTooltipHextechId = "";
+      hextechTooltip.hidden = true;
     }
 
     input.addEventListener("input", setReady);
@@ -1131,6 +1287,21 @@ HTML = """<!doctype html>
     championSearch.addEventListener("input", renderChampions);
     hextechSearch.addEventListener("input", renderHextechs);
     modalBack.addEventListener("click", closeChampionModal);
+    modalAnswer.addEventListener("mouseover", (event) => {
+      const term = event.target.closest?.(".hextech-term");
+      if (term) showHextechTooltip(term, event);
+    });
+    modalAnswer.addEventListener("mousemove", (event) => {
+      if (event.target.closest?.(".hextech-term")) {
+        positionHextechTooltip(event);
+      }
+    });
+    modalAnswer.addEventListener("mouseout", (event) => {
+      const term = event.target.closest?.(".hextech-term");
+      if (term && !term.contains(event.relatedTarget)) {
+        hideHextechTooltip();
+      }
+    });
 
     applyTheme(localStorage.getItem("hextech:theme") || "light");
     applyModelMode(currentMode());
