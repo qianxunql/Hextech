@@ -26,21 +26,18 @@ HTML = """<!doctype html>
   <style>
     :root {
       color-scheme: light;
-      --bg: #ffffff;
-      --panel: #f3f3f3;
-      --text: #151515;
-      --muted: #8e8e8e;
-      --line: #eeeeee;
+      --bg: #f6f8fc;
+      --panel: #eef2f7;
+      --text: #111827;
+      --muted: #5f6877;
+      --line: #d8dee8;
       --button: #ffffff;
-      --button-disabled: #dddddd;
+      --button-disabled: #d6dce6;
       --card: #ffffff;
-      --field: #f7f7f7;
-      --hover: #f4f4f4;
+      --field: #eef2f7;
+      --hover: #e6ebf2;
       --shadow: rgba(0, 0, 0, 0.08);
-      --modal-bg: #ffffff;
-      --detail-bg: #101010;
-      --detail-text: #f2f2f2;
-      --detail-muted: #cfcfcf;
+      --modal-bg: #f8fafc;
     }
 
     * { box-sizing: border-box; }
@@ -68,9 +65,6 @@ HTML = """<!doctype html>
       --hover: #23262c;
       --shadow: rgba(0, 0, 0, 0.38);
       --modal-bg: #0f1012;
-      --detail-bg: #050607;
-      --detail-text: #f6f6f6;
-      --detail-muted: #c8ccd3;
     }
 
     .app {
@@ -593,16 +587,16 @@ HTML = """<!doctype html>
       max-height: calc(100vh - 136px);
       padding: 22px 24px;
       border-radius: 18px;
-      background: var(--detail-bg);
-      color: var(--detail-text);
-      border: 1px solid #2f343b;
-      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 44px var(--shadow);
     }
 
     .hextech-term {
       display: inline;
       border-bottom: 1px dotted currentColor;
-      color: #6f6fff;
+      color: #3346b8;
       cursor: help;
       font-weight: 650;
     }
@@ -1168,12 +1162,12 @@ HTML = """<!doctype html>
       const requestId = ++modalRequestId;
       championModal.classList.add("open");
       championModal.setAttribute("aria-hidden", "false");
-      modalAnswer.classList.add("detail-panel");
+      modalAnswer.classList.remove("detail-panel");
       modalTitle.textContent = "海克斯详情";
       modalImage.src = item.image;
       modalImage.alt = item.name;
       modalName.textContent = item.name;
-      modalSubtitle.textContent = `${item.tier} · ${item.id}`;
+      modalSubtitle.textContent = item.tier;
       modalAnswer.textContent = "正在检索知识库并生成解析...";
 
       const question = `海克斯强化「${item.name}」（${item.tier}）适合哪些英雄或玩法？请基于知识库给出简洁实战解析：适合谁、怎么拿收益最高、哪些情况要避开。`;
@@ -1212,7 +1206,7 @@ HTML = """<!doctype html>
             <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" />
             <div>
               <div class="tooltip-name">${escapeHtml(item.name)}</div>
-              <div class="tooltip-tier">${escapeHtml(item.tier)} · ${escapeHtml(item.id)}</div>
+              <div class="tooltip-tier">${escapeHtml(item.tier)}</div>
             </div>
           </div>
           <div class="tooltip-desc">${escapeHtml(item.description || "暂无描述")}</div>

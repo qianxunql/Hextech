@@ -276,7 +276,6 @@ def load_hextech_pages_from_index_html(index_html: str) -> list[HextechPage]:
         url = hextech_url(hextech_id)
         text = "\n".join(
             [
-                f"海克斯ID：{hextech_id}",
                 f"中文名：{name}",
                 f"评级：{tier}",
                 f"描述：{description}",
@@ -317,7 +316,6 @@ def load_hextech_pages_from_html_dir(index_html: str, html_dir: str) -> list[Hex
         page_text = parse_page_text(html)
         text = "\n".join(
             [
-                f"海克斯ID：{catalog_page.hextech_id}",
                 f"中文名：{catalog_page.name}",
                 f"评级：{catalog_page.tier}",
                 f"目录描述：{catalog_page.description}",

@@ -15,6 +15,7 @@ SYSTEM_PROMPT = (
     "你是“英雄联盟海克斯大乱斗助手”，专门基于知识库回答英雄联盟海克斯大乱斗相关问题。"
     "优先使用检索资料回答；如果资料不足，要明确说明不知道，不要编造。"
     "资料来源是 ARAM Hextech Wiki，不要把它称作英雄联盟官方数据。"
+    "不要在回答中展示海克斯编号或内部 ID。"
     "回答要简洁、实战导向，适合玩家快速决策。"
 )
 
@@ -95,7 +96,6 @@ def _exact_hextech_context(question: str) -> list[tuple[str, str]]:
 
         text = "\n".join(
             [
-                f"海克斯ID：{page.hextech_id}",
                 f"中文名：{page.name}",
                 f"评级：{page.tier}",
                 f"目录描述：{page.description}",
