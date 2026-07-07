@@ -117,19 +117,99 @@ http://127.0.0.1:8765
 启动桌面界面：
 
 ```powershell
-uv run hextech-gui
+uv run hextech-desktop
 ```
 
-打包 Windows 可执行文件：
+启动内置文本索引版桌面界面：
 
 ```powershell
-uv run pyinstaller --noconsole --onedir --name HextechAssistant --paths src --add-data "data;data" src\aiproject\gui.py
+uv run hextech-desktop-text
+```
+
+### 打包 Windows 应用
+
+生成 Ollama Embedding 版单文件桌面应用：
+
+```powershell
+.\scripts\build_windows.ps1
+```
+
+等价手动命令：
+
+```powershell
+uv sync --all-groups
+uv run pyinstaller --noconfirm --clean HextechAssistant.spec
 ```
 
 打包结果在：
 
 ```text
-dist\HextechAssistant\HextechAssistant.exe
+dist\HextechAssistant.exe
+```
+
+生成内置文本索引版单文件桌面应用：
+
+```powershell
+.\scripts\build_windows_text.ps1
+```
+
+等价手动命令：
+
+```powershell
+uv sync --all-groups
+uv run pyinstaller --noconfirm --clean HextechAssistantText.spec
+```
+
+打包结果在：
+
+```text
+dist\HextechAssistant-TextIndex.exe
+```
+
+两个 exe 都是单文件应用，已经内置：
+
+- `data/chroma` 知识库
+- 英雄目录页、英雄详情页索引数据
+- 海克斯目录页、海克斯详情页索引数据
+- 英雄图片和海克斯图标
+
+不要把项目源码、`.venv`、`data` 文件夹一起发给用户。只需要发送：
+
+```text
+dist\HextechAssistant.exe
+```
+
+或者发送内置文本索引版：
+
+```text
+dist\HextechAssistant-TextIndex.exe
+```
+
+两个版本区别：
+
+| 文件 | 检索方式 | 用户电脑要求 |
+|---|---|---|
+| `HextechAssistant.exe` | Chroma + Ollama Embedding | DeepSeek API Key、Ollama、`nomic-embed-text` |
+| `HextechAssistant-TextIndex.exe` | exe 内置 HTML 资料 + 文本索引 | DeepSeek API Key |
+
+### 给别人使用
+
+用户双击 exe 后会打开桌面应用窗口。
+
+第一次使用时点击左下角设置按钮，填写自己的 DeepSeek API Key。API Key 会保存到 exe 同目录的 `.env` 文件：
+
+```text
+DEEPSEEK_API_KEY=用户自己的 Key
+```
+
+如果发给别人使用，推荐发送 `HextechAssistant-TextIndex.exe`。这个版本不需要安装 Ollama，不需要项目源码，也不需要单独发送知识库文件。
+
+如果需要指定 DeepSeek 模型，也可以在 exe 同目录手动创建或编辑 `.env`：
+
+```text
+AI_MODEL_PROVIDER=deepseek
+DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_API_KEY=用户自己的 Key
 ```
 
 By default the project uses DeepSeek for answering:
@@ -144,6 +224,18 @@ Ollama is still used for local embeddings by default:
 
 ```powershell
 $env:OLLAMA_EMBEDDING_MODEL="nomic-embed-text"
+```
+
+内置文本索引版会在启动时自动使用：
+
+```text
+RETRIEVAL_MODE=text
+```
+
+原 Ollama 版默认使用：
+
+```text
+RETRIEVAL_MODE=ollama
 ```
 
 ## LangGraph

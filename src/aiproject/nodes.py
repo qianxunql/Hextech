@@ -8,7 +8,7 @@ from aiproject.config import get_settings
 from aiproject.llms import build_chat_model
 from aiproject.scraper import load_champion_pages_from_index_html, load_hextech_pages_from_index_html, parse_page_text
 from aiproject.state import AgentState
-from aiproject.vectorstore import get_vectorstore
+from aiproject.text_index import search_text_documents
 
 
 SYSTEM_PROMPT = (
@@ -115,14 +115,21 @@ def _is_hextech_question(question: str) -> bool:
 
 def retrieve_node(state: AgentState) -> dict:
     question = state["messages"][-1].content
+    settings = get_settings()
     champion_matches = _exact_champion_context(question)
     hextech_matches = _exact_hextech_context(question)
     exact_matches = [*champion_matches, *hextech_matches]
 
     docs = []
-    if not (hextech_matches and not champion_matches):
+    text_context: list[str] = []
+    text_sources: list[str] = []
+    if settings.retrieval_mode == "text":
+        text_context, text_sources = search_text_documents(question, k=8)
+    elif not (hextech_matches and not champion_matches):
         try:
-            vectorstore = get_vectorstore(get_settings())
+            from aiproject.vectorstore import get_vectorstore
+
+            vectorstore = get_vectorstore(settings)
             docs = vectorstore.similarity_search(question, k=5)
             if _is_hextech_question(question):
                 docs.extend(
@@ -138,6 +145,12 @@ def retrieve_node(state: AgentState) -> dict:
 
     context = [text for _, text in exact_matches]
     seen_context: set[str] = set(context)
+    for text in text_context:
+        if text in seen_context:
+            continue
+        seen_context.add(text)
+        context.append(text)
+
     for doc in docs:
         if doc.page_content in seen_context:
             continue
@@ -145,6 +158,7 @@ def retrieve_node(state: AgentState) -> dict:
         context.append(doc.page_content)
 
     source_set = {source for source, _ in exact_matches}
+    source_set.update(text_sources)
     source_set.update(
         str(doc.metadata["source"])
         for doc in docs

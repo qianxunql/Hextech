@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 from urllib.parse import unquote, urlparse
 
+from aiproject.config import external_config_dir
 from aiproject.main import run
 from aiproject.scraper import load_champion_pages_from_index_html, load_hextech_pages_from_index_html
 
@@ -41,7 +42,22 @@ HTML = """<!doctype html>
       --hex-icon-bg: #111827;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    *::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    html,
+    body {
+      overflow: hidden;
+    }
 
     body {
       margin: 0;
@@ -70,16 +86,34 @@ HTML = """<!doctype html>
     }
 
     .app {
+      height: 100vh;
       min-height: 100vh;
       display: grid;
+      grid-template-columns: 56px 1fr;
       grid-template-rows: 56px 1fr auto;
+      transition: grid-template-columns 0.18s ease;
+    }
+
+    .app.nav-expanded {
+      grid-template-columns: 178px 1fr;
+    }
+
+    .sidebar {
+      grid-row: 1 / 4;
+      display: grid;
+      grid-template-rows: 56px 1fr auto;
+      background: color-mix(in srgb, var(--panel) 82%, var(--bg));
+      border-right: 1px solid var(--line);
+      overflow: hidden;
+      z-index: 60;
     }
 
     header {
+      grid-column: 2;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 26px 0 10px;
+      justify-content: flex-start;
+      padding: 0 26px;
     }
 
     .brand {
@@ -171,40 +205,83 @@ HTML = """<!doctype html>
       z-index: 3;
     }
 
-    .window-actions {
-      display: flex;
-      gap: 34px;
-      color: var(--text);
-      font-size: 25px;
-      line-height: 1;
-      user-select: none;
-    }
-
+    .sidebar-toggle,
+    .side-tab,
     .settings-trigger,
     .theme-trigger {
-      position: fixed;
-      bottom: 28px;
-      z-index: 10;
-      width: 34px;
-      height: 34px;
+      width: 100%;
+      height: 48px;
       border: 0;
-      border-radius: 50%;
       background: transparent;
       color: var(--muted);
-      font-size: 24px;
-      line-height: 34px;
+      font-size: 18px;
+      line-height: 1;
       padding: 0;
       cursor: pointer;
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      align-items: center;
+      text-align: left;
     }
 
-    .settings-trigger { left: 28px; }
+    .sidebar-toggle {
+      color: var(--text);
+      font-size: 23px;
+    }
 
-    .theme-trigger { left: 70px; }
+    .side-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 4px;
+    }
 
+    .side-bottom {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 4px 16px;
+    }
+
+    .nav-icon {
+      width: 56px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 650;
+    }
+
+    .nav-label {
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .app:not(.nav-expanded) .nav-label {
+      opacity: 0;
+    }
+
+    .sidebar-toggle:hover,
+    .side-tab:hover,
     .settings-trigger:hover,
     .theme-trigger:hover {
       background: var(--hover);
       color: var(--text);
+    }
+
+    .side-tab.active {
+      background: var(--hover);
+      color: var(--text);
+      border-radius: 8px;
+    }
+
+    .side-tab.active .nav-icon {
+      color: #246b76;
+    }
+
+    body.dark .side-tab.active .nav-icon {
+      color: #7dd8e8;
     }
 
     .settings-backdrop {
@@ -213,9 +290,13 @@ HTML = """<!doctype html>
       display: none;
       align-items: flex-end;
       justify-content: flex-start;
-      padding: 0 0 76px 28px;
+      padding: 0 0 76px 74px;
       background: rgba(0, 0, 0, 0.18);
       z-index: 20;
+    }
+
+    body.nav-expanded .settings-backdrop {
+      padding-left: 196px;
     }
 
     .settings-backdrop.open {
@@ -284,6 +365,7 @@ HTML = """<!doctype html>
     }
 
     main {
+      grid-column: 2;
       display: flex;
       align-items: stretch;
       justify-content: center;
@@ -294,30 +376,9 @@ HTML = """<!doctype html>
     .workspace {
       width: min(1180px, 100%);
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: 1fr;
       gap: 18px;
       min-height: 0;
-    }
-
-    .home-tabs {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-    }
-
-    .tab-button {
-      height: 42px;
-      border-radius: 21px;
-      padding: 0 20px;
-      background: var(--hover);
-      color: var(--muted);
-      font-size: 15px;
-      cursor: pointer;
-    }
-
-    .tab-button.active {
-      background: var(--text);
-      color: var(--bg);
     }
 
     .view {
@@ -509,12 +570,16 @@ HTML = """<!doctype html>
 
     .champion-modal {
       position: fixed;
-      inset: 0;
+      inset: 0 0 0 56px;
       z-index: 40;
       display: none;
       grid-template-rows: auto 1fr;
       background: var(--modal-bg);
       color: var(--text);
+    }
+
+    body.nav-expanded .champion-modal {
+      left: 178px;
     }
 
     .champion-modal.open {
@@ -662,6 +727,7 @@ HTML = """<!doctype html>
     }
 
     .composer-wrap {
+      grid-column: 2;
       padding: 8px 48px 48px;
       display: flex;
       justify-content: center;
@@ -744,8 +810,15 @@ HTML = """<!doctype html>
     }
 
     @media (max-width: 760px) {
-      .settings-trigger { left: 18px; bottom: 18px; }
-      .theme-trigger { left: 58px; bottom: 18px; }
+      .app.nav-expanded {
+        grid-template-columns: 150px 1fr;
+      }
+      body.nav-expanded .champion-modal {
+        left: 150px;
+      }
+      body.nav-expanded .settings-backdrop {
+        padding-left: 168px;
+      }
       main { padding: 18px 18px 4px; }
       .composer-wrap { padding: 8px 16px 22px; }
       .composer {
@@ -770,6 +843,37 @@ HTML = """<!doctype html>
 </head>
 <body>
   <div class="app">
+    <aside class="sidebar" aria-label="主导航">
+      <button class="sidebar-toggle" id="sidebarToggle" type="button" title="展开导航" aria-label="展开导航">
+        <span class="nav-icon">☰</span>
+        <span class="nav-label">菜单</span>
+      </button>
+      <nav class="side-nav" aria-label="主页栏目">
+        <button class="side-tab active" id="aiTab" type="button" title="AI回答">
+          <span class="nav-icon">AI</span>
+          <span class="nav-label">AI回答</span>
+        </button>
+        <button class="side-tab" id="rosterTab" type="button" title="英雄名录">
+          <span class="nav-icon">英</span>
+          <span class="nav-label">英雄名录</span>
+        </button>
+        <button class="side-tab" id="hextechTab" type="button" title="海克斯强化">
+          <span class="nav-icon">海</span>
+          <span class="nav-label">海克斯强化</span>
+        </button>
+      </nav>
+      <div class="side-bottom">
+        <button class="settings-trigger" id="settingsButton" type="button" title="设置" aria-label="设置">
+          <span class="nav-icon">⚙</span>
+          <span class="nav-label">设置</span>
+        </button>
+        <button class="theme-trigger" id="themeButton" type="button" title="夜间模式" aria-label="夜间模式">
+          <span class="nav-icon" id="themeIcon">☾</span>
+          <span class="nav-label" id="themeLabel">夜间模式</span>
+        </button>
+      </div>
+    </aside>
+
     <header>
       <div class="brand">
         <span class="brand-icon" aria-hidden="true">
@@ -778,11 +882,7 @@ HTML = """<!doctype html>
         </span>
         <span>Hextech</span>
       </div>
-      <div class="window-actions"><span>−</span><span>□</span><span>×</span></div>
     </header>
-
-    <button class="settings-trigger" id="settingsButton" type="button" title="设置" aria-label="设置">⚙</button>
-    <button class="theme-trigger" id="themeButton" type="button" title="夜间模式" aria-label="夜间模式">☾</button>
 
     <div class="settings-backdrop" id="settingsBackdrop">
       <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
@@ -798,12 +898,6 @@ HTML = """<!doctype html>
 
     <main>
       <section class="workspace">
-        <nav class="home-tabs" aria-label="主页栏目">
-          <button class="tab-button active" id="aiTab" type="button">AI回答</button>
-          <button class="tab-button" id="rosterTab" type="button">英雄名录</button>
-          <button class="tab-button" id="hextechTab" type="button">海克斯强化</button>
-        </nav>
-
         <section class="view active" id="aiView">
           <section class="conversation">
             <div class="empty" id="empty"></div>
@@ -866,12 +960,16 @@ HTML = """<!doctype html>
 
   <script>
     const form = document.querySelector("#form");
+    const app = document.querySelector(".app");
     const input = document.querySelector("#question");
     const send = document.querySelector("#send");
     const empty = document.querySelector("#empty");
     const messages = document.querySelector("#messages");
+    const sidebarToggle = document.querySelector("#sidebarToggle");
     const settingsButton = document.querySelector("#settingsButton");
     const themeButton = document.querySelector("#themeButton");
+    const themeIcon = document.querySelector("#themeIcon");
+    const themeLabel = document.querySelector("#themeLabel");
     const settingsBackdrop = document.querySelector("#settingsBackdrop");
     const apiKeyInput = document.querySelector("#apiKeyInput");
     const saveSettings = document.querySelector("#saveSettings");
@@ -906,10 +1004,19 @@ HTML = """<!doctype html>
     function applyTheme(theme) {
       const isDark = theme === "dark";
       document.body.classList.toggle("dark", isDark);
-      themeButton.textContent = isDark ? "☀" : "☾";
+      themeIcon.textContent = isDark ? "☀" : "☾";
+      themeLabel.textContent = isDark ? "日间模式" : "夜间模式";
       themeButton.title = isDark ? "日间模式" : "夜间模式";
       themeButton.setAttribute("aria-label", themeButton.title);
       localStorage.setItem("hextech:theme", isDark ? "dark" : "light");
+    }
+
+    function applyNavExpanded(expanded) {
+      app.classList.toggle("nav-expanded", expanded);
+      document.body.classList.toggle("nav-expanded", expanded);
+      sidebarToggle.title = expanded ? "收起导航" : "展开导航";
+      sidebarToggle.setAttribute("aria-label", sidebarToggle.title);
+      localStorage.setItem("hextech:navExpanded", expanded ? "1" : "0");
     }
 
     async function loadSettings() {
@@ -1029,6 +1136,9 @@ HTML = """<!doctype html>
     }
 
     function setActiveView(view) {
+      if (championModal.classList.contains("open")) {
+        closeChampionModal();
+      }
       const isRoster = view === "roster";
       const isHextech = view === "hextech";
       const isAi = view === "ai";
@@ -1266,6 +1376,10 @@ HTML = """<!doctype html>
       applyTheme(document.body.classList.contains("dark") ? "light" : "dark");
     });
 
+    sidebarToggle.addEventListener("click", () => {
+      applyNavExpanded(!app.classList.contains("nav-expanded"));
+    });
+
     settingsBackdrop.addEventListener("click", (event) => {
       if (event.target === settingsBackdrop) {
         settingsBackdrop.classList.remove("open");
@@ -1296,6 +1410,7 @@ HTML = """<!doctype html>
     });
 
     applyTheme(localStorage.getItem("hextech:theme") || "light");
+    applyNavExpanded(localStorage.getItem("hextech:navExpanded") === "1");
     input.focus();
     setReady();
   </script>
@@ -1371,8 +1486,12 @@ def hextech_catalog() -> list[dict[str, str]]:
     return sorted(hextechs, key=lambda item: (int(item["ratingRank"]), item["name"]))
 
 
+def env_file_path(path: str = ".env") -> Path:
+    return external_config_dir() / path
+
+
 def read_env_value(key: str, path: str = ".env") -> str:
-    env_path = Path(path)
+    env_path = env_file_path(path)
     if not env_path.exists():
         return ""
     for raw_line in env_path.read_text(encoding="utf-8", errors="replace").splitlines():
@@ -1386,7 +1505,8 @@ def read_env_value(key: str, path: str = ".env") -> str:
 
 
 def write_env_value(key: str, value: str, path: str = ".env") -> None:
-    env_path = Path(path)
+    env_path = env_file_path(path)
+    env_path.parent.mkdir(parents=True, exist_ok=True)
     lines = env_path.read_text(encoding="utf-8", errors="replace").splitlines() if env_path.exists() else []
     updated = False
     next_lines: list[str] = []

@@ -3,10 +3,17 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 import os
 from pathlib import Path
+import sys
 from typing import Any, Iterator
 
 
 SETTINGS_OVERRIDES: ContextVar[dict[str, Any]] = ContextVar("settings_overrides", default={})
+
+
+def external_config_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path.cwd()
 
 
 @dataclass(frozen=True)
@@ -14,6 +21,7 @@ class Settings:
     model_provider: str = "deepseek"
     deepseek_model: str = "deepseek-chat"
     deepseek_api_key: str = ""
+    retrieval_mode: str = "ollama"
     ollama_embedding_model: str = "nomic-embed-text"
     temperature: float = 0.2
     knowledge_base_dir: str = "data/chroma"
@@ -21,18 +29,22 @@ class Settings:
 
 
 def load_dotenv(path: str = ".env") -> None:
-    env_path = Path(path)
-    if not env_path.exists():
-        return
+    env_paths = [external_config_dir() / path]
+    cwd_path = Path(path)
+    if cwd_path.resolve() != env_paths[0].resolve():
+        env_paths.append(cwd_path)
 
-    for raw_line in env_path.read_text(encoding="utf-8", errors="replace").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    for env_path in env_paths:
+        if not env_path.exists():
             continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        os.environ.setdefault(key, value)
+        for raw_line in env_path.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            os.environ.setdefault(key, value)
 
 
 def get_settings() -> Settings:
@@ -42,6 +54,7 @@ def get_settings() -> Settings:
         model_provider=overrides.get("model_provider", os.getenv("AI_MODEL_PROVIDER", "deepseek")).lower(),
         deepseek_model=overrides.get("deepseek_model", os.getenv("DEEPSEEK_MODEL", "deepseek-chat")),
         deepseek_api_key=overrides.get("deepseek_api_key", os.getenv("DEEPSEEK_API_KEY", "")),
+        retrieval_mode=overrides.get("retrieval_mode", os.getenv("RETRIEVAL_MODE", "ollama")).lower(),
         ollama_embedding_model=overrides.get(
             "ollama_embedding_model",
             os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text"),

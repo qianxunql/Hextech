@@ -11,10 +11,13 @@ dependencies = [
     "langchain-deepseek>=1.1.0",
     "langchain-ollama>=1.1.0",
     "langgraph>=1.0.5",
+    "pywebview>=6.1",
 ]
 
 [project.scripts]
 hextech = "aiproject.main:main"
+hextech-desktop = "aiproject.desktop:main"
+hextech-desktop-text = "aiproject.desktop_text:main"
 hextech-gui = "aiproject.gui:main"
 hextech-web = "aiproject.web:main"
 
