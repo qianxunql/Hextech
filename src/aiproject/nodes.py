@@ -79,20 +79,42 @@ def _exact_hextech_context(question: str) -> list[tuple[str, str]]:
     return matches
 
 
+def _is_hextech_question(question: str) -> bool:
+    keywords = ("海克斯", "强化", "符文", "棱彩", "黄金阶", "白银阶")
+    return any(keyword in question for keyword in keywords)
+
+
 def retrieve_node(state: AgentState) -> dict:
     question = state["messages"][-1].content
-    exact_matches = _exact_champion_context(question)
-    exact_matches.extend(_exact_hextech_context(question))
-    if exact_matches:
-        return {
-            "context": [text for _, text in exact_matches],
-            "sources": sorted({source for source, _ in exact_matches}),
-        }
+    champion_matches = _exact_champion_context(question)
+    hextech_matches = _exact_hextech_context(question)
+    exact_matches = [*champion_matches, *hextech_matches]
 
-    vectorstore = get_vectorstore(get_settings())
-    docs = vectorstore.similarity_search(question, k=5)
+    docs = []
+    if not (hextech_matches and not champion_matches):
+        try:
+            vectorstore = get_vectorstore(get_settings())
+            docs = vectorstore.similarity_search(question, k=5)
+            if _is_hextech_question(question):
+                docs.extend(
+                    vectorstore.similarity_search(
+                        question,
+                        k=5,
+                        filter={"hextech": {"$ne": ""}},
+                    )
+                )
+        except Exception:
+            if not exact_matches:
+                raise
+
     context = [text for _, text in exact_matches]
-    context.extend(doc.page_content for doc in docs)
+    seen_context: set[str] = set(context)
+    for doc in docs:
+        if doc.page_content in seen_context:
+            continue
+        seen_context.add(doc.page_content)
+        context.append(doc.page_content)
+
     source_set = {source for source, _ in exact_matches}
     source_set.update(
         str(doc.metadata["source"])
