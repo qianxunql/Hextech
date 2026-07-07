@@ -1003,8 +1003,9 @@ HTML = """<!doctype html>
     }
 
     function linkifyHextechTerms(text) {
+      const newline = String.fromCharCode(10);
       if (!hextechItems.length) {
-        return escapeHtml(text).replaceAll("\n", "<br>");
+        return escapeHtml(text).replaceAll(newline, "<br>");
       }
       const byName = new Map();
       hextechItems.forEach((item) => {
@@ -1014,7 +1015,7 @@ HTML = """<!doctype html>
       });
       const names = Array.from(byName.keys()).sort((a, b) => b.length - a.length);
       if (!names.length) {
-        return escapeHtml(text).replaceAll("\n", "<br>");
+        return escapeHtml(text).replaceAll(newline, "<br>");
       }
       const pattern = new RegExp(names.map(escapeRegExp).join("|"), "g");
       return escapeHtml(text)
@@ -1023,7 +1024,7 @@ HTML = """<!doctype html>
           if (!item) return match;
           return `<span class="hextech-term" data-hextech-id="${escapeHtml(item.id)}">${match}</span>`;
         })
-        .replaceAll("\n", "<br>");
+        .replaceAll(newline, "<br>");
     }
 
     async function setModalAnswerWithHextechTerms(text) {
