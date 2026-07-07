@@ -566,6 +566,11 @@ HTML = """<!doctype html>
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.14);
     }
 
+    .modal-hero img.hextech-icon {
+      background: var(--hex-icon-bg);
+      padding: 16px;
+    }
+
     .modal-name {
       margin: 18px 0 4px;
       font-size: 28px;
@@ -1033,6 +1038,15 @@ HTML = """<!doctype html>
       }
     }
 
+    async function setMessageWithHextechTerms(node, text) {
+      try {
+        await ensureHextechItems();
+        node.innerHTML = linkifyHextechTerms(text);
+      } catch {
+        node.textContent = text;
+      }
+    }
+
     function setActiveView(view) {
       const isRoster = view === "roster";
       const isHextech = view === "hextech";
@@ -1132,6 +1146,7 @@ HTML = """<!doctype html>
       modalTitle.textContent = "海克斯推荐";
       modalImage.src = champion.image;
       modalImage.alt = champion.name;
+      modalImage.classList.remove("hextech-icon");
       modalName.textContent = champion.name;
       modalSubtitle.textContent = champion.title || champion.id;
       modalAnswer.textContent = "正在生成推荐...";
@@ -1169,6 +1184,7 @@ HTML = """<!doctype html>
       modalTitle.textContent = "海克斯详情";
       modalImage.src = item.image;
       modalImage.alt = item.name;
+      modalImage.classList.add("hextech-icon");
       modalName.textContent = item.name;
       modalSubtitle.textContent = item.tier;
       modalAnswer.textContent = "正在检索知识库并生成解析...";
@@ -1250,7 +1266,7 @@ HTML = """<!doctype html>
           body: JSON.stringify({ question, modelMode: currentMode() }),
         });
         const data = await response.json();
-        pending.textContent = data.answer || "没有得到回答。";
+        await setMessageWithHextechTerms(pending, data.answer || "没有得到回答。");
       } catch (error) {
         pending.textContent = `出错了：${error}`;
       } finally {
@@ -1285,16 +1301,16 @@ HTML = """<!doctype html>
     championSearch.addEventListener("input", renderChampions);
     hextechSearch.addEventListener("input", renderHextechs);
     modalBack.addEventListener("click", closeChampionModal);
-    modalAnswer.addEventListener("mouseover", (event) => {
+    document.addEventListener("mouseover", (event) => {
       const term = event.target.closest?.(".hextech-term");
       if (term) showHextechTooltip(term, event);
     });
-    modalAnswer.addEventListener("mousemove", (event) => {
+    document.addEventListener("mousemove", (event) => {
       if (event.target.closest?.(".hextech-term")) {
         positionHextechTooltip(event);
       }
     });
-    modalAnswer.addEventListener("mouseout", (event) => {
+    document.addEventListener("mouseout", (event) => {
       const term = event.target.closest?.(".hextech-term");
       if (term && !term.contains(event.relatedTarget)) {
         hideHextechTooltip();
