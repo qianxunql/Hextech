@@ -4,6 +4,8 @@
 
 - `https://apexlol.info/zh/champions`
 - `https://apexlol.info/zh/champions/x`
+- `https://apexlol.info/zh/hextech`
+- `https://apexlol.info/zh/hextech/x`
 
 ## Project Layout
 
@@ -64,6 +66,14 @@ uv run python -m aiproject.main ingest --html-dir data/html
 ```powershell
 $env:APEXLOL_COOKIE="cf_clearance=..."
 uv run python -m aiproject.main download --index-html data/html/champions_index.html
+```
+
+下载并导入海克斯详情页：
+
+```powershell
+$env:APEXLOL_COOKIE="cf_clearance=..."
+uv run python -m aiproject.main download-hextech --index-html "海克斯强化列表 _ ARAM Hextech Wiki.html"
+uv run python -m aiproject.main ingest-hextech --index-html "海克斯强化列表 _ ARAM Hextech Wiki.html" --html-dir data/html/hextech
 ```
 
 调试时可以只抓几个：

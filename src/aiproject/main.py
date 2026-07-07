@@ -9,6 +9,7 @@ from aiproject.scraper import (
     download_hextech_htmls_from_index,
     load_champion_pages_from_html_dir,
     load_champion_pages_from_index_html,
+    load_hextech_pages_from_html_dir,
     scrape_champion_pages,
 )
 from aiproject.vectorstore import ingest_pages
@@ -44,6 +45,16 @@ def ingest(
     print(f"已抓取 {len(pages)} 个英雄页面，写入 {chunk_count} 个知识片段。")
 
 
+def ingest_hextech(index_html: str, html_dir: str, limit: int | None = None) -> None:
+    pages = load_hextech_pages_from_html_dir(index_html=index_html, html_dir=html_dir)
+
+    if limit is not None:
+        pages = pages[:limit]
+
+    chunk_count = ingest_pages(pages)
+    print(f"已导入 {len(pages)} 个海克斯详情页，写入 {chunk_count} 个知识片段。")
+
+
 def download(index_html: str, output_dir: str, limit: int | None = None) -> None:
     count = download_champion_htmls_from_index(
         index_html=index_html,
@@ -72,6 +83,15 @@ def main() -> None:
     ingest_parser.add_argument("--index-html", help="从浏览器另存为的英雄目录页 HTML 导入")
     ingest_parser.add_argument("--html-dir", help="从浏览器另存为的本地 HTML 目录导入")
 
+    ingest_hextech_parser = subparsers.add_parser("ingest-hextech", help="把本地海克斯详情页写入知识库")
+    ingest_hextech_parser.add_argument(
+        "--index-html",
+        default="海克斯强化列表 _ ARAM Hextech Wiki.html",
+        help="海克斯目录页 HTML",
+    )
+    ingest_hextech_parser.add_argument("--html-dir", default="data/html/hextech", help="本地海克斯详情页 HTML 目录")
+    ingest_hextech_parser.add_argument("--limit", type=int, help="限制导入数量，调试时很有用")
+
     ask_parser = subparsers.add_parser("ask", help="基于知识库提问")
     ask_parser.add_argument("question", help="要问助手的问题")
 
@@ -98,6 +118,14 @@ def main() -> None:
             limit=args.limit,
             html_dir=args.html_dir,
             index_html=args.index_html,
+        )
+        return
+
+    if args.command == "ingest-hextech":
+        ingest_hextech(
+            index_html=args.index_html,
+            html_dir=args.html_dir,
+            limit=args.limit,
         )
         return
 

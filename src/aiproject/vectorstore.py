@@ -6,7 +6,7 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from aiproject.config import Settings, get_settings
-from aiproject.scraper import ChampionPage
+from aiproject.scraper import ChampionPage, HextechPage
 
 
 def build_embeddings(settings: Settings) -> OllamaEmbeddings:
@@ -22,7 +22,7 @@ def get_vectorstore(settings: Settings | None = None) -> Chroma:
     )
 
 
-def pages_to_documents(pages: list[ChampionPage]) -> list[Document]:
+def pages_to_documents(pages: list[ChampionPage | HextechPage]) -> list[Document]:
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=900,
         chunk_overlap=120,
@@ -30,16 +30,29 @@ def pages_to_documents(pages: list[ChampionPage]) -> list[Document]:
     )
     documents: list[Document] = []
     for page in pages:
-        documents.append(
-            Document(
-                page_content=f"英雄页面：{page.name}\n来源：{page.url}\n\n{page.text}",
-                metadata={"champion": page.name, "source": page.url},
+        if isinstance(page, HextechPage):
+            documents.append(
+                Document(
+                    page_content=f"海克斯页面：{page.name}\n评级：{page.tier}\n来源：{page.url}\n\n{page.text}",
+                    metadata={
+                        "hextech": page.name,
+                        "hextech_id": page.hextech_id,
+                        "tier": page.tier,
+                        "source": page.url,
+                    },
+                )
             )
-        )
+        else:
+            documents.append(
+                Document(
+                    page_content=f"英雄页面：{page.name}\n来源：{page.url}\n\n{page.text}",
+                    metadata={"champion": page.name, "source": page.url},
+                )
+            )
     return splitter.split_documents(documents)
 
 
-def ingest_pages(pages: list[ChampionPage], settings: Settings | None = None) -> int:
+def ingest_pages(pages: list[ChampionPage | HextechPage], settings: Settings | None = None) -> int:
     vectorstore = get_vectorstore(settings)
     chunks = pages_to_documents(pages)
     if not chunks:

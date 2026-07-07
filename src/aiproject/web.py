@@ -10,7 +10,7 @@ import sys
 from urllib.parse import unquote, urlparse
 
 from aiproject.main import run
-from aiproject.scraper import load_champion_pages_from_index_html, load_hextech_pages_from_index_html, parse_page_text
+from aiproject.scraper import load_champion_pages_from_index_html, load_hextech_pages_from_index_html
 
 
 HOST = "127.0.0.1"
@@ -1054,10 +1054,9 @@ HTML = """<!doctype html>
       modalImage.alt = item.name;
       modalName.textContent = item.name;
       modalSubtitle.textContent = `${item.tier} · ${item.id}`;
-      const detail = item.detail || item.description || "暂无详情。";
-      modalAnswer.textContent = `${detail}\n\nAI解析\n正在生成解析...`;
+      modalAnswer.textContent = "正在检索知识库并生成解析...";
 
-      const question = `请分析海克斯强化「${item.name}」（${item.tier}）。资料：${item.description || detail}。请用中文简洁说明：1. 适合哪些英雄或玩法；2. 怎么拿收益最高；3. 需要避开的情况。`;
+      const question = `海克斯强化「${item.name}」（${item.tier}）适合哪些英雄或玩法？请基于知识库给出简洁实战解析：适合谁、怎么拿收益最高、哪些情况要避开。`;
       try {
         const response = await fetch("/api/ask", {
           method: "POST",
@@ -1066,10 +1065,10 @@ HTML = """<!doctype html>
         });
         const data = await response.json();
         if (requestId !== modalRequestId) return;
-        modalAnswer.textContent = `${detail}\n\nAI解析\n${data.answer || "没有得到回答。"}`;
+        modalAnswer.textContent = data.answer || "没有得到回答。";
       } catch (error) {
         if (requestId !== modalRequestId) return;
-        modalAnswer.textContent = `${detail}\n\nAI解析\n出错了：${error}`;
+        modalAnswer.textContent = `出错了：${error}`;
       }
     }
 
@@ -1189,21 +1188,6 @@ def champion_catalog() -> list[dict[str, str]]:
     return sorted(champions, key=lambda item: item["name"])
 
 
-def _compact_detail_text(text: str, fallback: str) -> str:
-    lines: list[str] = []
-    seen: set[str] = set()
-    for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if not line or line in seen:
-            continue
-        seen.add(line)
-        lines.append(line)
-        if len("\n".join(lines)) > 2200:
-            break
-    detail = "\n".join(lines).strip()
-    return detail or fallback
-
-
 def hextech_catalog() -> list[dict[str, str]]:
     try:
         pages = load_hextech_pages_from_index_html("海克斯强化列表 _ ARAM Hextech Wiki.html")
@@ -1211,18 +1195,10 @@ def hextech_catalog() -> list[dict[str, str]]:
         return []
 
     image_root = Path("海克斯强化列表 _ ARAM Hextech Wiki_files")
-    html_root = Path("data/html/hextech")
     tier_order = {"棱彩阶": 0, "黄金阶": 1, "白银阶": 2}
     hextechs: list[dict[str, str]] = []
     for page in pages:
         image_path = image_root / f"{page.hextech_id}.webp"
-        detail = page.description
-        detail_path = html_root / f"{page.hextech_id}.html"
-        if detail_path.exists():
-            detail = _compact_detail_text(
-                parse_page_text(detail_path.read_text(encoding="utf-8", errors="replace")),
-                page.description,
-            )
         hextechs.append(
             {
                 "id": page.hextech_id,
@@ -1230,7 +1206,6 @@ def hextech_catalog() -> list[dict[str, str]]:
                 "tier": page.tier,
                 "ratingRank": str(tier_order.get(page.tier, 99)),
                 "description": page.description,
-                "detail": detail,
                 "image": f"/assets/hextech/{page.hextech_id}.webp" if image_path.exists() else "",
             }
         )

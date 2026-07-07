@@ -5,7 +5,7 @@ from langchain_core.runnables import RunnableConfig
 
 from aiproject.config import get_settings
 from aiproject.llms import build_chat_model
-from aiproject.scraper import load_champion_pages_from_index_html, parse_page_text
+from aiproject.scraper import load_champion_pages_from_index_html, load_hextech_pages_from_index_html, parse_page_text
 from aiproject.state import AgentState
 from aiproject.vectorstore import get_vectorstore
 
@@ -44,9 +44,45 @@ def _exact_champion_context(question: str) -> list[tuple[str, str]]:
     return matches
 
 
+def _exact_hextech_context(question: str) -> list[tuple[str, str]]:
+    try:
+        pages = load_hextech_pages_from_index_html("海克斯强化列表 _ ARAM Hextech Wiki.html")
+    except RuntimeError:
+        return []
+
+    question_lower = question.lower()
+    matches: list[tuple[str, str]] = []
+    for page in pages:
+        aliases = [page.hextech_id, page.name]
+        if not any(alias and alias.lower() in question_lower for alias in aliases):
+            continue
+
+        local_detail = Path("data/html/hextech") / f"{page.hextech_id}.html"
+        if local_detail.exists():
+            html = local_detail.read_text(encoding="utf-8", errors="replace")
+            detail_text = parse_page_text(html)
+        else:
+            detail_text = page.text
+
+        text = "\n".join(
+            [
+                f"海克斯ID：{page.hextech_id}",
+                f"中文名：{page.name}",
+                f"评级：{page.tier}",
+                f"目录描述：{page.description}",
+                "",
+                detail_text,
+            ]
+        )
+        matches.append((page.url, text))
+
+    return matches
+
+
 def retrieve_node(state: AgentState) -> dict:
     question = state["messages"][-1].content
     exact_matches = _exact_champion_context(question)
+    exact_matches.extend(_exact_hextech_context(question))
     if exact_matches:
         return {
             "context": [text for _, text in exact_matches],

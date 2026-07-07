@@ -300,6 +300,50 @@ def load_hextech_pages_from_index_html(index_html: str) -> list[HextechPage]:
     return pages
 
 
+def load_hextech_pages_from_html_dir(index_html: str, html_dir: str) -> list[HextechPage]:
+    catalog_pages = load_hextech_pages_from_index_html(index_html)
+    catalog = {page.hextech_id: page for page in catalog_pages}
+    root = Path(html_dir)
+    if not root.exists():
+        raise RuntimeError(f"海克斯 HTML 目录不存在：{html_dir}")
+
+    pages: list[HextechPage] = []
+    for path in sorted(root.glob("*.html")):
+        catalog_page = catalog.get(path.stem)
+        if catalog_page is None:
+            continue
+
+        html = path.read_text(encoding="utf-8", errors="replace")
+        page_text = parse_page_text(html)
+        text = "\n".join(
+            [
+                f"海克斯ID：{catalog_page.hextech_id}",
+                f"中文名：{catalog_page.name}",
+                f"评级：{catalog_page.tier}",
+                f"目录描述：{catalog_page.description}",
+                f"详情页：{catalog_page.url}",
+                "",
+                "详情正文：",
+                page_text,
+            ]
+        )
+        pages.append(
+            HextechPage(
+                hextech_id=catalog_page.hextech_id,
+                name=catalog_page.name,
+                tier=catalog_page.tier,
+                url=catalog_page.url,
+                description=catalog_page.description,
+                text=text,
+            )
+        )
+
+    if not pages:
+        raise RuntimeError(f"海克斯 HTML 目录里没有可匹配目录的 .html 文件：{html_dir}")
+
+    return pages
+
+
 def download_champion_htmls_from_index(
     index_html: str,
     output_dir: str = "data/html/champions",
