@@ -845,6 +845,7 @@ HTML = """<!doctype html>
     };
     let championItems = [];
     let hextechItems = [];
+    let modalRequestId = 0;
 
     function currentMode() {
       return modelSelect.value || localStorage.getItem("hextech:modelMode") || "cloud";
@@ -1008,6 +1009,7 @@ HTML = """<!doctype html>
     }
 
     async function openChampionModal(champion) {
+      const requestId = ++modalRequestId;
       championModal.classList.add("open");
       championModal.setAttribute("aria-hidden", "false");
       modalAnswer.classList.remove("detail-panel");
@@ -1026,20 +1028,24 @@ HTML = """<!doctype html>
           body: JSON.stringify({ question, modelMode: currentMode() }),
         });
         const data = await response.json();
+        if (requestId !== modalRequestId) return;
         modalAnswer.textContent = data.answer || "没有得到回答。";
       } catch (error) {
+        if (requestId !== modalRequestId) return;
         modalAnswer.textContent = `出错了：${error}`;
       }
     }
 
     function closeChampionModal() {
+      modalRequestId += 1;
       championModal.classList.remove("open");
       championModal.setAttribute("aria-hidden", "true");
       modalAnswer.classList.remove("detail-panel");
       modalAnswer.textContent = "";
     }
 
-    function openHextechModal(item) {
+    async function openHextechModal(item) {
+      const requestId = ++modalRequestId;
       championModal.classList.add("open");
       championModal.setAttribute("aria-hidden", "false");
       modalAnswer.classList.add("detail-panel");
@@ -1048,7 +1054,23 @@ HTML = """<!doctype html>
       modalImage.alt = item.name;
       modalName.textContent = item.name;
       modalSubtitle.textContent = `${item.tier} · ${item.id}`;
-      modalAnswer.textContent = item.detail || item.description || "暂无详情。";
+      const detail = item.detail || item.description || "暂无详情。";
+      modalAnswer.textContent = `${detail}\n\nAI解析\n正在生成解析...`;
+
+      const question = `请分析海克斯强化「${item.name}」（${item.tier}）。资料：${item.description || detail}。请用中文简洁说明：1. 适合哪些英雄或玩法；2. 怎么拿收益最高；3. 需要避开的情况。`;
+      try {
+        const response = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, modelMode: currentMode() }),
+        });
+        const data = await response.json();
+        if (requestId !== modalRequestId) return;
+        modalAnswer.textContent = `${detail}\n\nAI解析\n${data.answer || "没有得到回答。"}`;
+      } catch (error) {
+        if (requestId !== modalRequestId) return;
+        modalAnswer.textContent = `${detail}\n\nAI解析\n出错了：${error}`;
+      }
     }
 
     input.addEventListener("input", setReady);
