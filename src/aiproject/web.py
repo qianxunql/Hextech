@@ -38,6 +38,10 @@ HTML = """<!doctype html>
       --hover: #e6ebf2;
       --shadow: rgba(0, 0, 0, 0.08);
       --modal-bg: #f8fafc;
+      --hex-card-bg: #0f1117;
+      --hex-card-text: #f8fafc;
+      --hex-card-muted: #c9d1df;
+      --hex-card-line: #252b36;
     }
 
     * { box-sizing: border-box; }
@@ -65,6 +69,10 @@ HTML = """<!doctype html>
       --hover: #23262c;
       --shadow: rgba(0, 0, 0, 0.38);
       --modal-bg: #0f1012;
+      --hex-card-bg: #090b10;
+      --hex-card-text: #f8fafc;
+      --hex-card-muted: #c7ced9;
+      --hex-card-line: #262c37;
     }
 
     .app {
@@ -471,6 +479,9 @@ HTML = """<!doctype html>
       text-align: left;
       align-items: center;
       min-height: 92px;
+      border-color: var(--hex-card-line);
+      background: var(--hex-card-bg);
+      color: var(--hex-card-text);
     }
 
     .hextech-card img {
@@ -500,7 +511,7 @@ HTML = """<!doctype html>
     }
 
     .hextech-tier {
-      color: var(--text);
+      color: var(--hex-card-muted);
       font-weight: 600;
     }
 
@@ -610,10 +621,10 @@ HTML = """<!doctype html>
       z-index: 80;
       width: min(360px, calc(100vw - 24px));
       pointer-events: none;
-      border: 1px solid var(--line);
+      border: 1px solid var(--hex-card-line);
       border-radius: 16px;
-      background: var(--card);
-      color: var(--text);
+      background: var(--hex-card-bg);
+      color: var(--hex-card-text);
       box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
       padding: 14px;
     }
@@ -634,7 +645,7 @@ HTML = """<!doctype html>
       width: 48px;
       height: 48px;
       border-radius: 12px;
-      background: var(--panel);
+      background: #171b24;
     }
 
     .tooltip-name {
@@ -644,13 +655,13 @@ HTML = """<!doctype html>
 
     .tooltip-tier,
     .tooltip-desc {
-      color: var(--muted);
+      color: var(--hex-card-muted);
       font-size: 12px;
       line-height: 1.45;
     }
 
     .tooltip-desc {
-      color: var(--text);
+      color: var(--hex-card-text);
     }
 
     .composer-wrap {
