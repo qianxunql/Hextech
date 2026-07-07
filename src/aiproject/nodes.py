@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from langchain_core.messages import SystemMessage
 from langchain_core.runnables import RunnableConfig
@@ -44,6 +45,33 @@ def _exact_champion_context(question: str) -> list[tuple[str, str]]:
     return matches
 
 
+def _compact_alias(name: str) -> str:
+    compact = re.sub(r"[\W_]+", "", name)
+    for token in ("你的", "他们", "它们", "这个", "那个", "之", "的", "出"):
+        compact = compact.replace(token, "")
+    if len(compact) >= 3:
+        return f"{compact[0]}{compact[-1]}"
+    return compact
+
+
+def _hextech_aliases(pages) -> dict[str, set[str]]:
+    alias_counts: dict[str, int] = {}
+    raw_aliases: dict[str, set[str]] = {}
+    for page in pages:
+        aliases = {page.hextech_id, page.name}
+        short_alias = _compact_alias(page.name)
+        if len(short_alias) >= 2 and short_alias != page.name:
+            aliases.add(short_alias)
+        raw_aliases[page.hextech_id] = aliases
+        for alias in aliases:
+            alias_counts[alias.lower()] = alias_counts.get(alias.lower(), 0) + 1
+
+    return {
+        hextech_id: {alias for alias in aliases if alias_counts.get(alias.lower(), 0) == 1}
+        for hextech_id, aliases in raw_aliases.items()
+    }
+
+
 def _exact_hextech_context(question: str) -> list[tuple[str, str]]:
     try:
         pages = load_hextech_pages_from_index_html("海克斯强化列表 _ ARAM Hextech Wiki.html")
@@ -51,9 +79,10 @@ def _exact_hextech_context(question: str) -> list[tuple[str, str]]:
         return []
 
     question_lower = question.lower()
+    aliases_by_id = _hextech_aliases(pages)
     matches: list[tuple[str, str]] = []
     for page in pages:
-        aliases = [page.hextech_id, page.name]
+        aliases = aliases_by_id.get(page.hextech_id, {page.hextech_id, page.name})
         if not any(alias and alias.lower() in question_lower for alias in aliases):
             continue
 
