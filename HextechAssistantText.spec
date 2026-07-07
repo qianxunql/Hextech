@@ -9,6 +9,7 @@ datas = [
     ("英雄名录 _ ARAM Hextech Wiki_files", "英雄名录 _ ARAM Hextech Wiki_files"),
     ("海克斯强化列表 _ ARAM Hextech Wiki.html", "."),
     ("海克斯强化列表 _ ARAM Hextech Wiki_files", "海克斯强化列表 _ ARAM Hextech Wiki_files"),
+    ("assets\\poro.ico", "assets"),
     (".env.example", "."),
 ]
 
@@ -35,7 +36,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name="HextechAssistant-TextIndex",
+    name="Poro-TextIndex",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -46,6 +47,7 @@ exe = EXE(
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
+    icon="assets\\poro.ico",
     codesign_identity=None,
     entitlements_file=None,
 )

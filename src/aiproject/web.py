@@ -23,7 +23,7 @@ HTML = """<!doctype html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hextech</title>
+  <title>Poro</title>
   <style>
     :root {
       color-scheme: light;
@@ -936,7 +936,7 @@ HTML = """<!doctype html>
           <span class="poro-gem"></span>
           <span class="poro"><span class="poro-tongue"></span></span>
         </span>
-        <span>Hextech</span>
+        <span>Poro</span>
       </div>
     </header>
 
@@ -1613,7 +1613,7 @@ def write_env_value(key: str, value: str, path: str = ".env") -> None:
 
 
 class HextechRequestHandler(BaseHTTPRequestHandler):
-    server_version = "HextechWeb/0.1"
+    server_version = "PoroWeb/0.1"
 
     def do_GET(self) -> None:
         path = urlparse(self.path).path
@@ -1734,7 +1734,7 @@ def serve(host: str = HOST, port: int = PORT) -> None:
     os.environ.setdefault("AI_MODEL_PROVIDER", "deepseek")
     os.environ.setdefault("DEEPSEEK_MODEL", "deepseek-chat")
     server = ThreadingHTTPServer((host, port), HextechRequestHandler)
-    print(f"Hextech web UI: http://{host}:{port}")
+    print(f"Poro web UI: http://{host}:{port}")
     server.serve_forever()
 
 

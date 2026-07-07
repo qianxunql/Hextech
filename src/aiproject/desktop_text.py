@@ -14,7 +14,7 @@ def main() -> None:
     try:
         import webview
 
-        window = webview.create_window("Hextech 内置索引版", url, width=1190, height=900, min_size=(860, 680))
+        window = webview.create_window("Poro 内置索引版", url, width=1190, height=900, min_size=(860, 680))
         webview.start()
         if window:
             server.shutdown()

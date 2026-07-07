@@ -144,7 +144,7 @@ uv run pyinstaller --noconfirm --clean HextechAssistant.spec
 打包结果在：
 
 ```text
-dist\HextechAssistant.exe
+dist\Poro.exe
 ```
 
 生成内置文本索引版单文件桌面应用：
@@ -163,7 +163,7 @@ uv run pyinstaller --noconfirm --clean HextechAssistantText.spec
 打包结果在：
 
 ```text
-dist\HextechAssistant-TextIndex.exe
+dist\Poro-TextIndex.exe
 ```
 
 两个 exe 都是单文件应用，已经内置：
@@ -176,21 +176,21 @@ dist\HextechAssistant-TextIndex.exe
 不要把项目源码、`.venv`、`data` 文件夹一起发给用户。只需要发送：
 
 ```text
-dist\HextechAssistant.exe
+dist\Poro.exe
 ```
 
 或者发送内置文本索引版：
 
 ```text
-dist\HextechAssistant-TextIndex.exe
+dist\Poro-TextIndex.exe
 ```
 
 两个版本区别：
 
 | 文件 | 检索方式 | 用户电脑要求 |
 |---|---|---|
-| `HextechAssistant.exe` | Chroma + Ollama Embedding | DeepSeek API Key、Ollama、`nomic-embed-text` |
-| `HextechAssistant-TextIndex.exe` | exe 内置 HTML 资料 + 文本索引 | DeepSeek API Key |
+| `Poro.exe` | Chroma + Ollama Embedding | DeepSeek API Key、Ollama、`nomic-embed-text` |
+| `Poro-TextIndex.exe` | exe 内置 HTML 资料 + 文本索引 | DeepSeek API Key |
 
 ### 给别人使用
 
@@ -202,7 +202,7 @@ dist\HextechAssistant-TextIndex.exe
 DEEPSEEK_API_KEY=用户自己的 Key
 ```
 
-如果发给别人使用，推荐发送 `HextechAssistant-TextIndex.exe`。这个版本不需要安装 Ollama，不需要项目源码，也不需要单独发送知识库文件。
+如果发给别人使用，推荐发送 `Poro-TextIndex.exe`。这个版本不需要安装 Ollama，不需要项目源码，也不需要单独发送知识库文件。
 
 如果需要指定 DeepSeek 模型，也可以在 exe 同目录手动创建或编辑 `.env`：
 

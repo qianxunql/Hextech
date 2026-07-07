@@ -27,7 +27,7 @@ def app_dir() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-class HextechAssistantApp(tk.Tk):
+class PoroAssistantApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         os.chdir(app_dir())
@@ -37,7 +37,7 @@ class HextechAssistantApp(tk.Tk):
         self.queue: queue.Queue[tuple[str, str]] = queue.Queue()
         self.is_generating = False
 
-        self.title("Hextech")
+        self.title("Poro")
         self.geometry("1190x900")
         self.minsize(860, 680)
         self.configure(bg=BG)
@@ -67,7 +67,7 @@ class HextechAssistantApp(tk.Tk):
 
         brand = tk.Label(
             header,
-            text="⬡  Hextech",
+            text="⬡  Poro",
             bg=BG,
             fg=TEXT,
             font=("Segoe UI", 12),
@@ -259,7 +259,7 @@ class HextechAssistantApp(tk.Tk):
 
 
 def main() -> None:
-    app = HextechAssistantApp()
+    app = PoroAssistantApp()
     app.mainloop()
 
 
