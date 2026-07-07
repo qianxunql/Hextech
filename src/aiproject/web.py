@@ -917,7 +917,17 @@ HTML = """<!doctype html>
       </button>
       <nav class="side-nav" aria-label="主页栏目">
         <button class="side-tab active" id="aiTab" type="button" title="AI回答">
-          <span class="nav-icon">⌂</span>
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M8.5 5.2a3 3 0 0 1 5.2-1.7 3.2 3.2 0 0 1 5 3.1 3.7 3.7 0 0 1 1.4 6.2 3.5 3.5 0 0 1-4.4 4.9 3.2 3.2 0 0 1-5.4 1.3 3.3 3.3 0 0 1-5.2-2.8 3.7 3.7 0 0 1-.7-6.9A3.3 3.3 0 0 1 8.5 5.2Z"></path>
+              <path d="M10.3 4.1v15.1"></path>
+              <path d="M13.8 3.6c-.8.9-.8 2.2 0 3.1"></path>
+              <path d="M7.4 8.2c1.1-.3 2.1.1 2.9 1"></path>
+              <path d="M14.1 9.2c1.4-.4 2.8.1 3.6 1.2"></path>
+              <path d="M6.9 13.2c1.2.3 2 .9 2.6 1.9"></path>
+              <path d="M13.5 14.4c1.2-.2 2.2.2 3 1.1"></path>
+            </svg>
+          </span>
           <span class="nav-label">AI回答</span>
         </button>
         <button class="side-tab" id="rosterTab" type="button" title="英雄名录">
