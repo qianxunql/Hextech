@@ -1120,8 +1120,13 @@ HTML = """<!doctype html>
         const data = await response.json();
         apiKeyInput.value = "";
         apiKeyInput.placeholder = data.hasDeepseekApiKey ? "已保存，输入新 Key 可覆盖" : "sk-...";
+        settingsNote.textContent = data.hasDeepseekApiKey
+          ? "API Key 已配置。输入新 Key 并保存可以覆盖。"
+          : "首次使用请先填写 DeepSeek API Key，否则 AI 问答无法生成回答。";
+        return data;
       } catch {
         settingsNote.textContent = "读取设置失败。";
+        return { hasDeepseekApiKey: false };
       }
     }
 
@@ -1135,11 +1140,19 @@ HTML = """<!doctype html>
           body: JSON.stringify({ deepseekApiKey: apiKeyInput.value.trim() }),
         });
         const data = await response.json();
-        settingsNote.textContent = data.ok ? "已保存到 .env。" : "保存失败。";
+        settingsNote.textContent = data.ok ? "已保存到 .env，AI 问答现在可以使用。" : "保存失败。";
       } catch (error) {
         settingsNote.textContent = `保存失败：${error}`;
       } finally {
         saveSettings.disabled = false;
+      }
+    }
+
+    async function guideMissingApiKey() {
+      const settings = await loadSettings();
+      if (!settings.hasDeepseekApiKey) {
+        setActiveView("settings", { skipHistory: true });
+        apiKeyInput.focus();
       }
     }
 
@@ -1546,6 +1559,7 @@ HTML = """<!doctype html>
 
     applyTheme(localStorage.getItem("hextech:theme") || "light");
     applyNavExpanded(localStorage.getItem("hextech:navExpanded") === "1");
+    guideMissingApiKey();
     input.focus();
     setReady();
   </script>
