@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
+from collections import Counter
+import math
 from pathlib import Path
 import re
 
@@ -34,6 +36,15 @@ class TextDocument:
     title: str
     kind: str
     aliases: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class TextIndex:
+    documents: tuple[TextDocument, ...]
+    term_frequencies: tuple[Counter[str], ...]
+    document_frequencies: dict[str, int]
+    document_lengths: tuple[int, ...]
+    average_document_length: float
 
 
 def _tokens(text: str) -> list[str]:
@@ -131,37 +142,91 @@ def load_text_documents() -> tuple[TextDocument, ...]:
     return tuple(documents)
 
 
-def _score_document(question: str, question_tokens: list[str], document: TextDocument) -> int:
-    haystack = f"{document.title}\n{' '.join(document.aliases)}\n{document.content}".lower()
+@lru_cache(maxsize=1)
+def load_text_index() -> TextIndex:
+    documents = load_text_documents()
+    term_frequencies: list[Counter[str]] = []
+    document_frequencies: dict[str, int] = {}
+    document_lengths: list[int] = []
+
+    for document in documents:
+        indexed_text = "\n".join([document.title, " ".join(document.aliases), document.content])
+        frequencies = Counter(_tokens(indexed_text))
+        term_frequencies.append(frequencies)
+        document_lengths.append(sum(frequencies.values()))
+        for token in frequencies:
+            document_frequencies[token] = document_frequencies.get(token, 0) + 1
+
+    average_document_length = sum(document_lengths) / len(document_lengths) if document_lengths else 0.0
+    return TextIndex(
+        documents=documents,
+        term_frequencies=tuple(term_frequencies),
+        document_frequencies=document_frequencies,
+        document_lengths=tuple(document_lengths),
+        average_document_length=average_document_length,
+    )
+
+
+def _bm25_score(
+    question_tokens: list[str],
+    frequencies: Counter[str],
+    document_frequency: dict[str, int],
+    document_count: int,
+    document_length: int,
+    average_document_length: float,
+) -> float:
+    if not question_tokens or document_count <= 0 or document_length <= 0 or average_document_length <= 0:
+        return 0.0
+
+    k1 = 1.45
+    b = 0.72
+    score = 0.0
+    for token in set(question_tokens):
+        tf = frequencies.get(token, 0)
+        if tf <= 0:
+            continue
+        df = document_frequency.get(token, 0)
+        idf = math.log(1 + (document_count - df + 0.5) / (df + 0.5))
+        denominator = tf + k1 * (1 - b + b * document_length / average_document_length)
+        score += idf * (tf * (k1 + 1) / denominator)
+    return score
+
+
+def _score_document(
+    question: str,
+    question_tokens: list[str],
+    document: TextDocument,
+    index: TextIndex,
+    document_index: int,
+) -> float:
     question_lower = question.lower()
-    score = 0
+    score = _bm25_score(
+        question_tokens=question_tokens,
+        frequencies=index.term_frequencies[document_index],
+        document_frequency=index.document_frequencies,
+        document_count=len(index.documents),
+        document_length=index.document_lengths[document_index],
+        average_document_length=index.average_document_length,
+    )
 
     for alias in document.aliases:
         if alias and alias.lower() in question_lower:
-            score += 80
+            score += 12.0
 
     if document.kind == "hextech" and any(word in question for word in ("海克斯", "强化", "棱彩", "黄金", "白银")):
-        score += 8
+        score += 1.2
     if document.kind == "champion" and any(word in question for word in ("英雄", "出装", "玩法", "适合谁")):
-        score += 8
-
-    seen: set[str] = set()
-    for token in question_tokens:
-        if token in seen:
-            continue
-        seen.add(token)
-        if token in haystack:
-            score += 4 + min(haystack.count(token), 6)
+        score += 1.2
 
     return score
 
 
 def search_text_documents(question: str, k: int = 8) -> tuple[list[str], list[str]]:
-    documents = load_text_documents()
+    index = load_text_index()
     question_tokens = _tokens(question)
     scored = [
-        (_score_document(question, question_tokens, document), document)
-        for document in documents
+        (_score_document(question, question_tokens, document, index, document_index), document)
+        for document_index, document in enumerate(index.documents)
     ]
     ranked = [item for item in sorted(scored, key=lambda item: item[0], reverse=True) if item[0] > 0]
 

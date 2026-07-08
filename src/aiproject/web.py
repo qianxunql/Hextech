@@ -1094,6 +1094,7 @@ HTML = """<!doctype html>
     let activeTooltipHextechId = "";
     let activeViewName = "ai";
     let previousViewName = "ai";
+    const zhCollator = new Intl.Collator("zh-Hans-CN", { numeric: true, sensitivity: "base" });
 
     function applyTheme(theme) {
       const isDark = theme === "dark";
@@ -1296,7 +1297,7 @@ HTML = """<!doctype html>
       const champions = championItems.filter((champion) => {
         const haystack = `${champion.name} ${champion.title || ""} ${champion.id}`.toLowerCase();
         return haystack.includes(keyword);
-      });
+      }).sort((left, right) => zhCollator.compare(left.name, right.name));
       rosterCount.textContent = `${champions.length} / ${championItems.length} 位英雄`;
       championGrid.textContent = "";
       champions.forEach((champion) => {
