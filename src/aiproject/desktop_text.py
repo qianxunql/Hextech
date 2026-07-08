@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from aiproject.desktop import start_server
+from aiproject.desktop import create_desktop_window, start_server
 
 
 def main() -> None:
@@ -14,7 +14,7 @@ def main() -> None:
     try:
         import webview
 
-        window = webview.create_window("Poro 内置索引版", url, width=1190, height=900, min_size=(860, 680))
+        window = create_desktop_window("Poro", url)
         webview.start()
         if window:
             server.shutdown()

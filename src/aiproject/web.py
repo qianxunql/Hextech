@@ -113,12 +113,20 @@ HTML = """<!doctype html>
       grid-row: 1;
       display: flex;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: space-between;
       gap: 10px;
-      padding: 0 26px 0 10px;
+      padding: 0 0 0 10px;
       background: var(--bg);
       border-bottom: 1px solid var(--line);
       z-index: 70;
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      height: 100%;
     }
 
     .brand {
@@ -127,6 +135,45 @@ HTML = """<!doctype html>
       gap: 10px;
       font-size: 18px;
       font-weight: 500;
+    }
+
+    .window-controls {
+      height: 100%;
+      display: flex;
+      align-items: stretch;
+      margin-left: auto;
+    }
+
+    .window-control {
+      width: 52px;
+      height: 100%;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font: 18px "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
+    }
+
+    .window-control svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .window-control:hover {
+      background: var(--hover);
+    }
+
+    .window-control.close:hover {
+      background: #c42b1c;
+      color: #ffffff;
     }
 
     .brand-icon {
@@ -949,17 +996,30 @@ HTML = """<!doctype html>
     </aside>
 
     <header>
-      <button class="global-back" id="globalBackButton" type="button" title="返回" aria-label="返回">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M15 18 9 12l6-6"></path>
-        </svg>
-      </button>
-      <div class="brand">
-        <span class="brand-icon" aria-hidden="true">
-          <span class="poro-gem"></span>
-          <span class="poro"><span class="poro-tongue"></span></span>
-        </span>
-        <span>Poro</span>
+      <div class="title-area">
+        <button class="global-back" id="globalBackButton" type="button" title="返回" aria-label="返回">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 18 9 12l6-6"></path>
+          </svg>
+        </button>
+        <div class="brand">
+          <span class="brand-icon" aria-hidden="true">
+            <span class="poro-gem"></span>
+            <span class="poro"><span class="poro-tongue"></span></span>
+          </span>
+          <span>Poro</span>
+        </div>
+      </div>
+      <div class="window-controls" aria-label="窗口控制">
+        <button class="window-control" id="windowMinimize" type="button" title="最小化" aria-label="最小化">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10"></path></svg>
+        </button>
+        <button class="window-control" id="windowMaximize" type="button" title="最大化" aria-label="最大化">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5h7v7h-7Z"></path></svg>
+        </button>
+        <button class="window-control close" id="windowClose" type="button" title="关闭" aria-label="关闭">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 4.5 7 7M11.5 4.5l-7 7"></path></svg>
+        </button>
       </div>
     </header>
 
@@ -1050,6 +1110,9 @@ HTML = """<!doctype html>
     const empty = document.querySelector("#empty");
     const messages = document.querySelector("#messages");
     const globalBackButton = document.querySelector("#globalBackButton");
+    const windowMinimize = document.querySelector("#windowMinimize");
+    const windowMaximize = document.querySelector("#windowMaximize");
+    const windowClose = document.querySelector("#windowClose");
     const sidebarToggle = document.querySelector("#sidebarToggle");
     const settingsButton = document.querySelector("#settingsButton");
     const themeButton = document.querySelector("#themeButton");
@@ -1312,6 +1375,15 @@ HTML = """<!doctype html>
       input.focus();
     }
 
+    function callWindowApi(action) {
+      const api = window.pywebview?.api;
+      if (api?.[action]) {
+        api[action]();
+      } else if (action === "close") {
+        window.close();
+      }
+    }
+
     async function loadChampions() {
       rosterCount.textContent = "加载中";
       try {
@@ -1523,6 +1595,9 @@ HTML = """<!doctype html>
     });
 
     globalBackButton.addEventListener("click", goBack);
+    windowMinimize.addEventListener("click", () => callWindowApi("minimize"));
+    windowMaximize.addEventListener("click", () => callWindowApi("toggle_maximize"));
+    windowClose.addEventListener("click", () => callWindowApi("close"));
     saveSettings.addEventListener("click", saveApiKey);
     aiTab.addEventListener("click", () => setActiveView("ai"));
     rosterTab.addEventListener("click", () => setActiveView("roster"));
