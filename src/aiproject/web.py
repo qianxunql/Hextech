@@ -228,10 +228,13 @@ HTML = """<!doctype html>
     }
 
     .sidebar-back {
-      height: 54px;
-      margin-top: 8px;
+      width: calc(100% - 12px);
+      height: 52px;
+      margin: 10px 6px 8px;
+      background: var(--hover);
       color: var(--text);
-      font-size: 24px;
+      font-size: 22px;
+      border-radius: 8px;
     }
 
     .sidebar-toggle {
@@ -632,7 +635,7 @@ HTML = """<!doctype html>
       inset: 0 0 0 68px;
       z-index: 40;
       display: none;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: 1fr;
       background: var(--modal-bg);
       color: var(--text);
     }
@@ -645,35 +648,11 @@ HTML = """<!doctype html>
       display: grid;
     }
 
-    .modal-bar {
-      height: 64px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 0 24px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .back-button {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: var(--hover);
-      color: var(--text);
-      font-size: 24px;
-      cursor: pointer;
-    }
-
-    .modal-title {
-      font-size: 18px;
-      font-weight: 650;
-    }
-
     .modal-body {
       display: grid;
       grid-template-columns: 280px 1fr;
       gap: 32px;
-      padding: 36px 48px;
+      padding: 48px;
       min-height: 0;
     }
 
@@ -716,7 +695,7 @@ HTML = """<!doctype html>
 
     .modal-answer.detail-panel {
       align-self: start;
-      max-height: calc(100vh - 136px);
+      max-height: calc(100vh - 96px);
       padding: 22px 24px;
       border-radius: 18px;
       background: var(--panel);
@@ -908,7 +887,11 @@ HTML = """<!doctype html>
   <div class="app">
     <aside class="sidebar" aria-label="主导航">
       <button class="sidebar-back" id="globalBackButton" type="button" title="返回" aria-label="返回">
-        <span class="nav-icon">←</span>
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M15 18 9 12l6-6"></path>
+          </svg>
+        </span>
         <span class="nav-label">返回</span>
       </button>
       <button class="sidebar-toggle" id="sidebarToggle" type="button" title="展开导航" aria-label="展开导航">
@@ -1032,10 +1015,6 @@ HTML = """<!doctype html>
     </section>
 
     <section class="champion-modal" id="championModal" aria-hidden="true">
-      <div class="modal-bar">
-        <button class="back-button" id="modalBack" type="button" aria-label="返回">←</button>
-        <div class="modal-title" id="modalTitle">英雄详情</div>
-      </div>
       <div class="modal-body">
         <aside class="modal-hero">
           <img id="modalImage" alt="" />
@@ -1080,8 +1059,6 @@ HTML = """<!doctype html>
     const hextechCount = document.querySelector("#hextechCount");
     const hextechSearch = document.querySelector("#hextechSearch");
     const championModal = document.querySelector("#championModal");
-    const modalBack = document.querySelector("#modalBack");
-    const modalTitle = document.querySelector("#modalTitle");
     const modalImage = document.querySelector("#modalImage");
     const modalName = document.querySelector("#modalName");
     const modalSubtitle = document.querySelector("#modalSubtitle");
@@ -1399,7 +1376,6 @@ HTML = """<!doctype html>
       championModal.classList.add("open");
       championModal.setAttribute("aria-hidden", "false");
       modalAnswer.classList.remove("detail-panel");
-      modalTitle.textContent = "海克斯推荐";
       modalImage.src = champion.image;
       modalImage.alt = champion.name;
       modalImage.classList.remove("hextech-icon");
@@ -1434,7 +1410,6 @@ HTML = """<!doctype html>
       championModal.classList.add("open");
       championModal.setAttribute("aria-hidden", "false");
       modalAnswer.classList.remove("detail-panel");
-      modalTitle.textContent = "海克斯详情";
       modalImage.src = item.image;
       modalImage.alt = item.name;
       modalImage.classList.add("hextech-icon");
@@ -1540,7 +1515,6 @@ HTML = """<!doctype html>
     hextechTab.addEventListener("click", () => setActiveView("hextech"));
     championSearch.addEventListener("input", renderChampions);
     hextechSearch.addEventListener("input", renderHextechs);
-    modalBack.addEventListener("click", closeChampionModal);
     document.addEventListener("mouseover", (event) => {
       const term = event.target.closest?.(".hextech-term, .hextech-card");
       if (term) showHextechTooltip(term, event);
