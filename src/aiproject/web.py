@@ -90,7 +90,7 @@ HTML = """<!doctype html>
       min-height: 100vh;
       display: grid;
       grid-template-columns: 68px 1fr;
-      grid-template-rows: 56px 1fr auto;
+      grid-template-rows: 64px 1fr auto;
       transition: grid-template-columns 0.18s ease;
     }
 
@@ -99,9 +99,9 @@ HTML = """<!doctype html>
     }
 
     .sidebar {
-      grid-row: 1 / 4;
+      grid-row: 2 / 4;
       display: grid;
-      grid-template-rows: auto auto 1fr auto;
+      grid-template-rows: auto 1fr auto;
       background: color-mix(in srgb, var(--panel) 82%, var(--bg));
       border-right: 1px solid var(--line);
       overflow: hidden;
@@ -109,11 +109,16 @@ HTML = """<!doctype html>
     }
 
     header {
-      grid-column: 2;
+      grid-column: 1 / 3;
+      grid-row: 1;
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      padding: 0 26px;
+      gap: 10px;
+      padding: 0 26px 0 10px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      z-index: 70;
     }
 
     .brand {
@@ -205,7 +210,6 @@ HTML = """<!doctype html>
       z-index: 3;
     }
 
-    .sidebar-back,
     .sidebar-toggle,
     .side-tab,
     .settings-trigger,
@@ -227,14 +231,27 @@ HTML = """<!doctype html>
       text-align: left;
     }
 
-    .sidebar-back {
-      width: calc(100% - 12px);
-      height: 52px;
-      margin: 10px 6px 8px;
+    .global-back {
+      width: 52px;
+      height: 44px;
+      border: 0;
       background: var(--hover);
       color: var(--text);
-      font-size: 22px;
       border-radius: 8px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .global-back svg {
+      width: 23px;
+      height: 23px;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
     }
 
     .sidebar-toggle {
@@ -286,7 +303,7 @@ HTML = """<!doctype html>
       opacity: 0;
     }
 
-    .sidebar-back:hover,
+    .global-back:hover,
     .sidebar-toggle:hover,
     .side-tab:hover,
     .settings-trigger:hover,
@@ -632,7 +649,7 @@ HTML = """<!doctype html>
 
     .champion-modal {
       position: fixed;
-      inset: 0 0 0 68px;
+      inset: 64px 0 0 68px;
       z-index: 40;
       display: none;
       grid-template-rows: 1fr;
@@ -695,7 +712,7 @@ HTML = """<!doctype html>
 
     .modal-answer.detail-panel {
       align-self: start;
-      max-height: calc(100vh - 96px);
+      max-height: calc(100vh - 160px);
       padding: 22px 24px;
       border-radius: 18px;
       background: var(--panel);
@@ -886,14 +903,6 @@ HTML = """<!doctype html>
 <body>
   <div class="app">
     <aside class="sidebar" aria-label="主导航">
-      <button class="sidebar-back" id="globalBackButton" type="button" title="返回" aria-label="返回">
-        <span class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M15 18 9 12l6-6"></path>
-          </svg>
-        </span>
-        <span class="nav-label">返回</span>
-      </button>
       <button class="sidebar-toggle" id="sidebarToggle" type="button" title="展开导航" aria-label="展开导航">
         <span class="nav-icon">☰</span>
         <span class="nav-label">菜单</span>
@@ -940,6 +949,11 @@ HTML = """<!doctype html>
     </aside>
 
     <header>
+      <button class="global-back" id="globalBackButton" type="button" title="返回" aria-label="返回">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 18 9 12l6-6"></path>
+        </svg>
+      </button>
       <div class="brand">
         <span class="brand-icon" aria-hidden="true">
           <span class="poro-gem"></span>
