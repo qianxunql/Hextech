@@ -2,8 +2,10 @@ import argparse
 
 from langchain_core.messages import HumanMessage
 
-from aiproject.config import settings_override
+from aiproject.config import get_settings, settings_override
 from aiproject.graph import graph
+from aiproject.llms import build_chat_model
+from aiproject.nodes import build_answer_messages, retrieve_node
 from aiproject.scraper import (
     download_champion_htmls_from_index,
     download_hextech_htmls_from_index,
@@ -19,6 +21,17 @@ def run(question: str, overrides: dict | None = None) -> str:
     with settings_override(**(overrides or {})):
         result = graph.invoke({"messages": [HumanMessage(content=question)]})
     return result["messages"][-1].content
+
+
+def stream(question: str, overrides: dict | None = None):
+    with settings_override(**(overrides or {})):
+        state = {"messages": [HumanMessage(content=question)]}
+        state.update(retrieve_node(state))
+        llm = build_chat_model(get_settings())
+        for chunk in llm.stream(build_answer_messages(state)):
+            content = getattr(chunk, "content", "")
+            if content:
+                yield str(content)
 
 
 def ingest(

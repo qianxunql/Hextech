@@ -171,10 +171,14 @@ def retrieve_node(state: AgentState) -> dict:
 def answer_node(state: AgentState, config: RunnableConfig | None = None) -> dict:
     settings = get_settings()
     llm = build_chat_model(settings)
+    messages = build_answer_messages(state)
+    response = llm.invoke(messages, config=config)
+    return {"messages": [response]}
+
+
+def build_answer_messages(state: AgentState) -> list:
     context = "\n\n---\n\n".join(state.get("context", [])) or "没有检索到相关资料。"
-    messages = [
+    return [
         SystemMessage(content=f"{SYSTEM_PROMPT}\n\n知识库资料：\n{context}"),
         *state["messages"],
     ]
-    response = llm.invoke(messages, config=config)
-    return {"messages": [response]}

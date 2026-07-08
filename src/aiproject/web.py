@@ -10,7 +10,7 @@ import sys
 from urllib.parse import unquote, urlparse
 
 from aiproject.config import external_config_dir
-from aiproject.main import run
+from aiproject.main import run, stream as stream_run
 from aiproject.scraper import load_champion_pages_from_index_html, load_hextech_pages_from_index_html
 
 
@@ -1230,6 +1230,36 @@ HTML = """<!doctype html>
       }
     }
 
+    async function askStream(question, onChunk) {
+      const response = await fetch("/api/ask-stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+      if (!response.ok || !response.body) {
+        const fallback = await response.text();
+        throw new Error(fallback || `HTTP ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let answer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (!chunk) continue;
+        answer += chunk;
+        onChunk(answer);
+      }
+      const tail = decoder.decode();
+      if (tail) {
+        answer += tail;
+        onChunk(answer);
+      }
+      return answer;
+    }
+
     function setActiveView(view, options = {}) {
       if (championModal.classList.contains("open")) {
         closeChampionModal();
@@ -1366,14 +1396,11 @@ HTML = """<!doctype html>
 
       const question = `${champion.name}适合什么海克斯强化？请给出简洁实战推荐。`;
       try {
-        const response = await fetch("/api/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question }),
+        const answer = await askStream(question, (partial) => {
+          if (requestId === modalRequestId) modalAnswer.textContent = partial;
         });
-        const data = await response.json();
         if (requestId !== modalRequestId) return;
-        await setModalAnswerWithHextechTerms(data.answer || "没有得到回答。");
+        await setModalAnswerWithHextechTerms(answer || "没有得到回答。");
       } catch (error) {
         if (requestId !== modalRequestId) return;
         modalAnswer.textContent = `出错了：${error}`;
@@ -1404,14 +1431,11 @@ HTML = """<!doctype html>
 
       const question = `海克斯强化「${item.name}」（${item.tier}）适合哪些英雄或玩法？请基于知识库给出简洁实战解析：适合谁、怎么拿收益最高、哪些情况要避开。`;
       try {
-        const response = await fetch("/api/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question }),
+        const answer = await askStream(question, (partial) => {
+          if (requestId === modalRequestId) modalAnswer.textContent = partial;
         });
-        const data = await response.json();
         if (requestId !== modalRequestId) return;
-        await setModalAnswerWithHextechTerms(data.answer || "没有得到回答。");
+        await setModalAnswerWithHextechTerms(answer || "没有得到回答。");
       } catch (error) {
         if (requestId !== modalRequestId) return;
         modalAnswer.textContent = `出错了：${error}`;
@@ -1473,13 +1497,11 @@ HTML = """<!doctype html>
       send.disabled = true;
 
       try {
-        const response = await fetch("/api/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question }),
+        const answer = await askStream(question, (partial) => {
+          pending.textContent = partial;
+          messages.scrollTop = messages.scrollHeight;
         });
-        const data = await response.json();
-        await setMessageWithHextechTerms(pending, data.answer || "没有得到回答。");
+        await setMessageWithHextechTerms(pending, answer || "没有得到回答。");
       } catch (error) {
         pending.textContent = `出错了：${error}`;
       } finally {
@@ -1673,21 +1695,51 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
             self._handle_settings_post()
             return
 
+        if path == "/api/ask-stream":
+            self._handle_ask_stream()
+            return
+
         if path != "/api/ask":
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
 
-        length = int(self.headers.get("Content-Length", "0"))
-        raw_body = self.rfile.read(length)
         try:
-            payload = json.loads(raw_body.decode("utf-8"))
-            question = str(payload.get("question", "")).strip()
-            if not question:
-                raise ValueError("question is required")
+            question = self._read_question()
             answer = run(question, overrides=model_overrides())
             self._send_json({"answer": answer})
         except Exception as exc:  # noqa: BLE001 - returned to local UI
             self._send_json({"error": str(exc), "answer": f"出错了：{exc}"}, status=500)
+
+    def _read_question(self) -> str:
+        length = int(self.headers.get("Content-Length", "0"))
+        raw_body = self.rfile.read(length)
+        payload = json.loads(raw_body.decode("utf-8"))
+        question = str(payload.get("question", "")).strip()
+        if not question:
+            raise ValueError("question is required")
+        return question
+
+    def _handle_ask_stream(self) -> None:
+        try:
+            question = self._read_question()
+        except Exception as exc:  # noqa: BLE001 - returned to local UI
+            self._send_text(str(exc), "text/plain; charset=utf-8", status=400)
+            return
+
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        try:
+            for chunk in stream_run(question, overrides=model_overrides()):
+                body = chunk.encode("utf-8")
+                if not body:
+                    continue
+                self.wfile.write(body)
+                self.wfile.flush()
+        except Exception as exc:  # noqa: BLE001 - stream error is shown inline
+            self.wfile.write(f"出错了：{exc}".encode("utf-8"))
+            self.wfile.flush()
 
     def _handle_settings_post(self) -> None:
         length = int(self.headers.get("Content-Length", "0"))
