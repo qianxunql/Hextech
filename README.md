@@ -1,6 +1,6 @@
 # Poro
 
-Poro 是一个面向《英雄联盟》海克斯大乱斗玩法的桌面知识库问答助手。应用内置英雄与海克斯强化资料，使用本地 BM25 文本索引召回相关内容，并通过 DeepSeek 生成简洁、实战导向的回答。
+Poro 是一个面向《英雄联盟》海克斯大乱斗玩法的桌面知识库问答助手。应用内置英雄与海克斯强化资料，支持 BM25 文本检索和 Ollama Embedding 语义检索两种知识库召回方式，并通过 DeepSeek 生成简洁、实战导向的回答。
 
 ## 功能特性
 
@@ -9,7 +9,7 @@ Poro 是一个面向《英雄联盟》海克斯大乱斗玩法的桌面知识库
 - 海克斯强化：查看海克斯强化图标、评级和描述，支持搜索。
 - 详情解析：点击英雄或海克斯后自动生成 AI 实战解析。
 - 流式输出：AI 回答边生成边显示，降低等待感。
-- 内置资料索引：单文件 exe 内置资料、图片和文本索引，无需额外数据库。
+- 双检索模式：BM25 侧重速度和精确关键词命中，Ollama Embedding 侧重语义召回准确性。
 - 桌面体验：自定义标题栏、明暗主题、设置页、首次 API Key 引导。
 
 ## 资料源
@@ -23,21 +23,32 @@ Poro 是一个面向《英雄联盟》海克斯大乱斗玩法的桌面知识库
 
 资料仅作为知识库来源使用。回答内容由 AI 基于本地资料生成，不代表 Riot Games 或英雄联盟官方数据。
 
-## 给别人使用
+## 版本选择
 
-推荐发送单文件应用：
+项目提供两个 Windows 单文件版本：
+
+| 文件 | 检索方式 | 速度 | 准确性特点 | 运行要求 |
+|---|---|---:|---|---|
+| `Poro-TextIndex.exe` | BM25 文本检索 | 更快 | 对英雄名、海克斯名、明确关键词问题命中稳定 | DeepSeek API Key |
+| `Poro.exe` | Ollama Embedding 语义检索 | 取决于本机性能 | 对模糊问法、同义表达、语义相关问题更强 | DeepSeek API Key、Ollama、Embedding 模型 |
+
+BM25 适合这类问题：
 
 ```text
-dist\Poro-TextIndex.exe
+亚索适合什么海克斯？
+三重射击怎么样？
+亮剑适合谁？
 ```
 
-用户只需要：
+Ollama Embedding 适合这类问题：
 
-1. 双击打开 `Poro-TextIndex.exe`
-2. 在首次打开的设置页填写自己的 DeepSeek API Key
-3. 开始使用 AI 问答、英雄名录和海克斯强化功能
+```text
+有没有适合一直平 A 的强化？
+攻速流该拿哪些海克斯？
+想玩持续输出该怎么选强化？
+```
 
-不需要发送源码、`.venv`、`data` 文件夹或其他知识库文件。API Key 会保存到 exe 同目录的 `.env` 文件：
+首次启动时需要在设置页填写 DeepSeek API Key。API Key 会保存到 exe 同目录的 `.env` 文件：
 
 ```text
 DEEPSEEK_API_KEY=用户自己的 Key
@@ -82,10 +93,16 @@ uv run hextech-web
 http://127.0.0.1:8765
 ```
 
-启动桌面界面：
+启动 BM25 文本检索版桌面界面：
 
 ```powershell
 uv run hextech-desktop-text
+```
+
+启动 Ollama Embedding 语义检索版桌面界面：
+
+```powershell
+uv run hextech-desktop
 ```
 
 命令行提问：
@@ -96,7 +113,7 @@ uv run hextech ask "海克斯大乱斗里亚索适合拿什么强化？"
 
 ## 打包 Windows 应用
 
-推荐构建内置文本索引版：
+构建 BM25 文本检索版：
 
 ```powershell
 .\scripts\build_windows_text.ps1
@@ -115,6 +132,25 @@ uv run pyinstaller --noconfirm --clean HextechAssistantText.spec
 dist\Poro-TextIndex.exe
 ```
 
+构建 Ollama Embedding 语义检索版：
+
+```powershell
+.\scripts\build_windows.ps1
+```
+
+等价手动命令：
+
+```powershell
+uv sync --all-groups
+uv run pyinstaller --noconfirm --clean HextechAssistant.spec
+```
+
+打包结果：
+
+```text
+dist\Poro.exe
+```
+
 ## 项目结构
 
 ```text
@@ -128,6 +164,7 @@ src/aiproject/
   nodes.py        检索与回答节点
   scraper.py      页面解析、资料抓取与本地 HTML 导入
   text_index.py   内置 BM25 文本索引
+  vectorstore.py  Chroma / Ollama Embedding 向量检索
   web.py          本地 Web UI 与 HTTP API
 ```
 
@@ -136,7 +173,7 @@ src/aiproject/
 ```text
 用户问题
   -> 精确匹配英雄/海克斯名称
-  -> BM25 文本索引召回资料
+  -> BM25 文本索引或 Ollama Embedding 语义检索召回资料
   -> LangGraph 组织上下文
   -> DeepSeek 生成回答
   -> 前端流式展示
@@ -149,6 +186,8 @@ src/aiproject/
 - LangGraph
 - DeepSeek API
 - BM25 文本检索
+- Ollama Embedding
+- Chroma
 - HTML / CSS / JavaScript
 - pywebview
 - PyInstaller
