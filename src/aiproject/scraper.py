@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 import html as html_lib
 from html.parser import HTMLParser
 import json
@@ -204,6 +205,7 @@ def load_champion_pages_from_html_dir(html_dir: str) -> list[ChampionPage]:
     return pages
 
 
+@lru_cache(maxsize=8)
 def load_champion_pages_from_index_html(index_html: str) -> list[ChampionPage]:
     path = Path(index_html)
     if not path.exists():
@@ -247,6 +249,7 @@ def load_champion_pages_from_index_html(index_html: str) -> list[ChampionPage]:
     return pages
 
 
+@lru_cache(maxsize=8)
 def load_hextech_pages_from_index_html(index_html: str) -> list[HextechPage]:
     path = Path(index_html)
     if not path.exists():

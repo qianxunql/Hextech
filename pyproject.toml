@@ -1,7 +1,7 @@
 [project]
 name = "aiproject"
 version = "0.1.0"
-description = "Add your description here"
+description = "Poro desktop knowledge-base assistant for League of Legends ARAM Hextech augments"
 requires-python = ">=3.12"
 dependencies = [
     "chromadb>=1.5.9",

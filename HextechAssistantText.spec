@@ -9,6 +9,7 @@ datas = [
     ("英雄名录 _ ARAM Hextech Wiki_files", "英雄名录 _ ARAM Hextech Wiki_files"),
     ("海克斯强化列表 _ ARAM Hextech Wiki.html", "."),
     ("海克斯强化列表 _ ARAM Hextech Wiki_files", "海克斯强化列表 _ ARAM Hextech Wiki_files"),
+    ("src\\aiproject\\static", "aiproject\\static"),
     ("assets\\poro.ico", "assets"),
     (".env.example", "."),
 ]

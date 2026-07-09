@@ -111,6 +111,27 @@ uv run hextech-desktop
 uv run hextech ask "海克斯大乱斗里亚索适合拿什么强化？"
 ```
 
+### 资料准备
+
+仓库默认不提交本地 HTML 资料和图片缓存，避免体积过大。完整运行和打包前，需要准备这些文件：
+
+```text
+data/html/champions_index.html
+data/html/champions/*.html
+data/html/hextech/*.html
+英雄名录 _ ARAM Hextech Wiki.html
+英雄名录 _ ARAM Hextech Wiki_files/
+海克斯强化列表 _ ARAM Hextech Wiki.html
+海克斯强化列表 _ ARAM Hextech Wiki_files/
+```
+
+如果已经保存好目录页，可以用内置命令下载详情页：
+
+```powershell
+uv run hextech download --index-html data/html/champions_index.html --output-dir data/html/champions
+uv run hextech download-hextech --index-html "海克斯强化列表 _ ARAM Hextech Wiki.html" --output-dir data/html/hextech
+```
+
 ## 打包 Windows 应用
 
 构建 BM25 文本检索版：
