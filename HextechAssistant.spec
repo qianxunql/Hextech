@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 
 datas = [
@@ -12,12 +12,17 @@ datas = [
     ("src\\aiproject\\static", "aiproject\\static"),
     ("assets\\poro.ico", "assets"),
     (".env.example", "."),
-]
+] + collect_data_files("rapidocr_onnxruntime")
 
 hiddenimports = (
     collect_submodules("webview")
     + collect_submodules("chromadb")
     + collect_submodules("posthog")
+    + collect_submodules("PIL")
+    + collect_submodules("mss")
+    + collect_submodules("rapidfuzz")
+    + collect_submodules("rapidocr_onnxruntime")
+    + collect_submodules("onnxruntime")
 )
 
 a = Analysis(

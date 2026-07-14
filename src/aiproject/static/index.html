@@ -86,6 +86,27 @@
       <section class="workspace">
         <section class="view active" id="aiView">
           <section class="conversation">
+            <section class="vision-panel" aria-label="局内截图识别">
+              <div class="vision-head">
+                <div>
+                  <div class="vision-title">局内截图识别</div>
+                  <div class="vision-subtitle">海克斯选择界面截图识别后直接生成推荐</div>
+                </div>
+                <button class="vision-action" id="recognizeScreenshot" type="button">截图识别并推荐</button>
+              </div>
+              <div class="vision-fields">
+                <label class="vision-field">
+                  <span>当前英雄</span>
+                  <input id="visionChampion" type="text" placeholder="例如：亚索" autocomplete="off" />
+                </label>
+                <label class="vision-field">
+                  <span>手动 OCR 文本</span>
+                  <textarea id="visionText" placeholder="可选：OCR 不可用时，把海克斯名称粘到这里"></textarea>
+                </label>
+              </div>
+              <div class="vision-status" id="visionStatus">先把游戏停在海克斯选择界面，再点击识别。</div>
+              <div class="vision-matches" id="visionMatches"></div>
+            </section>
             <div class="empty" id="empty"></div>
             <div class="messages" id="messages"></div>
           </section>

@@ -12,7 +12,9 @@ from urllib.parse import unquote, urlparse
 
 from aiproject.config import external_config_dir
 from aiproject.main import run, stream as stream_run
+from aiproject.matcher import build_hextech_choice_question, match_hextech_names
 from aiproject.scraper import load_champion_pages_from_index_html, load_hextech_pages_from_index_html
+from aiproject.vision import OcrResult, capture_primary_monitor_png, ocr_image_bytes
 
 
 HOST = "127.0.0.1"
@@ -167,6 +169,14 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/settings":
             self._send_json({"hasDeepseekApiKey": bool(read_env_value("DEEPSEEK_API_KEY"))})
             return
+        if path == "/api/vision/status":
+            try:
+                import rapidocr_onnxruntime  # noqa: F401
+
+                self._send_json({"hasBuiltInOcr": True, "ocrEngine": "rapidocr-onnxruntime"})
+            except ImportError:
+                self._send_json({"hasBuiltInOcr": False, "ocrEngine": "rapidocr-onnxruntime"})
+            return
         if path.startswith("/static/"):
             self._send_static_file(path)
             return
@@ -188,6 +198,10 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
             self._handle_ask_stream()
             return
 
+        if path == "/api/recognize-screenshot":
+            self._handle_recognize_screenshot()
+            return
+
         if path != "/api/ask":
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
@@ -207,6 +221,13 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
         if not question:
             raise ValueError("question is required")
         return question
+
+    def _read_json_payload(self) -> dict:
+        length = int(self.headers.get("Content-Length", "0"))
+        if length <= 0:
+            return {}
+        raw_body = self.rfile.read(length)
+        return json.loads(raw_body.decode("utf-8"))
 
     def _handle_ask_stream(self) -> None:
         try:
@@ -238,6 +259,44 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
             api_key = str(payload.get("deepseekApiKey", "")).strip()
             write_env_value("DEEPSEEK_API_KEY", api_key)
             self._send_json({"ok": True})
+        except Exception as exc:  # noqa: BLE001 - returned to local UI
+            self._send_json({"ok": False, "error": str(exc)}, status=500)
+
+    def _handle_recognize_screenshot(self) -> None:
+        try:
+            payload = self._read_json_payload()
+            champion = str(payload.get("champion", "")).strip()
+            manual_text = str(payload.get("ocrText", "")).strip()
+
+            if manual_text:
+                ocr_result = OcrResult(text=manual_text, engine="manual")
+            else:
+                image_bytes = capture_primary_monitor_png()
+                ocr_result = ocr_image_bytes(image_bytes)
+
+            matches = match_hextech_names(ocr_result.text, hextech_catalog(), limit=4)
+            question = build_hextech_choice_question(champion, matches)
+            if not matches and ocr_result.text:
+                question = f"{question}\nOCR 原始文本：{ocr_result.text}"
+            self._send_json(
+                {
+                    "ok": True,
+                    "engine": ocr_result.engine,
+                    "warning": ocr_result.warning,
+                    "rawText": ocr_result.text,
+                    "matches": [
+                        {
+                            "id": item.id,
+                            "name": item.name,
+                            "tier": item.tier,
+                            "score": round(item.score, 1),
+                            "sourceText": item.source_text,
+                        }
+                        for item in matches
+                    ],
+                    "question": question,
+                }
+            )
         except Exception as exc:  # noqa: BLE001 - returned to local UI
             self._send_json({"ok": False, "error": str(exc)}, status=500)
 
