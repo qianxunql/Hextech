@@ -13,7 +13,7 @@ dependencies = [
     "langgraph>=1.0.5",
     "mss>=10.1.0",
     "pillow>=12.0.0",
-    "pywebview>=6.1",
+    "PySide6>=6.10.1",
     "rapidfuzz>=3.14.3",
     "rapidocr-onnxruntime>=1.4.4",
 ]
@@ -22,6 +22,7 @@ dependencies = [
 hextech = "aiproject.main:main"
 hextech-desktop = "aiproject.desktop:main"
 hextech-desktop-text = "aiproject.desktop_text:main"
+hextech-overlay = "aiproject.desktop_overlay:main"
 hextech-gui = "aiproject.gui:main"
 hextech-web = "aiproject.web:main"
 

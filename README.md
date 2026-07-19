@@ -26,12 +26,12 @@ Poro 是一个面向《英雄联盟》海克斯大乱斗玩法的桌面知识库
 
 ## 版本选择
 
-项目提供两个 Windows 单文件版本：
+项目提供两个 Windows 文件夹版：
 
 | 文件 | 检索方式 | 速度 | 准确性特点 | 运行要求 |
 |---|---|---:|---|---|
-| `Poro-TextIndex.exe` | BM25 文本检索 | 更快 | 对英雄名、海克斯名、明确关键词问题命中稳定 | DeepSeek API Key |
-| `Poro.exe` | Ollama Embedding 语义检索 | 取决于本机性能 | 对模糊问法、同义表达、语义相关问题更强 | DeepSeek API Key、Ollama、Embedding 模型 |
+| `dist\Poro-TextIndex\Poro-TextIndex.exe` | BM25 文本检索 | 更快 | 对英雄名、海克斯名、明确关键词问题命中稳定 | DeepSeek API Key |
+| `dist\Poro\Poro.exe` | Ollama Embedding 语义检索 | 取决于本机性能 | 对模糊问法、同义表达、语义相关问题更强 | DeepSeek API Key、Ollama、Embedding 模型 |
 
 BM25 适合这类问题：
 
@@ -116,13 +116,31 @@ uv run hextech ask "海克斯大乱斗里亚索适合拿什么强化？"
 
 截图识别使用内置 RapidOCR / ONNXRuntime，不需要用户额外安装 OCR 软件。
 
-使用方式：
+主窗口使用方式：
 
 1. 进入游戏海克斯选择界面。
-2. 在 Poro 的 AI 页面填写当前英雄，例如 `亚索`。
+2. Poro 会在英雄选择阶段通过 League Client 本地接口自动读取当前英雄；如果没有识别到，也可以手动填写，例如 `亚索`。
 3. 点击“截图识别并推荐”。
 
 如果 OCR 环境不可用，或识别效果不稳定，可以把截图中的海克斯名称手动粘到“手动 OCR 文本”里，再点击同一个按钮生成推荐。
+
+桌面版会同时创建一个隐藏的局内悬浮图标。进入英雄选择阶段或游戏中时，悬浮图标会自动显示；不在对局流程中时会自动隐藏。
+
+悬浮图标使用方式：
+
+1. 进入游戏海克斯选择界面。
+2. 点击悬浮图标，Poro 会截图识别当前可选海克斯，并在小对话框里显示 AI 推荐。
+3. 看完后再次点击悬浮图标，小对话框会收起，只保留小图标。
+
+建议把游戏设置为无边框或窗口化；全屏独占模式下，普通桌面悬浮窗可能无法显示在游戏上方。
+
+单独调试悬浮窗：
+
+```powershell
+uv run hextech-overlay
+```
+
+自动读取当前英雄使用的是 League Client 本地 LCU 接口，只读取客户端公开的选人阶段数据，不读取游戏进程内存。
 
 ### 资料准备
 
@@ -163,7 +181,7 @@ uv run pyinstaller --noconfirm --clean HextechAssistantText.spec
 打包结果：
 
 ```text
-dist\Poro-TextIndex.exe
+dist\Poro-TextIndex\Poro-TextIndex.exe
 ```
 
 构建 Ollama Embedding 语义检索版：
@@ -182,8 +200,29 @@ uv run pyinstaller --noconfirm --clean HextechAssistant.spec
 打包结果：
 
 ```text
-dist\Poro.exe
+dist\Poro\Poro.exe
 ```
+
+构建局内悬浮窗调试版：
+
+```powershell
+.\scripts\build_windows_overlay.ps1
+```
+
+等价手动命令：
+
+```powershell
+uv sync --all-groups
+uv run pyinstaller --noconfirm --clean HextechOverlay.spec
+```
+
+打包结果：
+
+```text
+dist\Poro-Overlay\Poro-Overlay.exe
+```
+
+正常使用时分发整个 `dist\Poro` 或 `dist\Poro-TextIndex` 文件夹，不要只复制 exe。悬浮图标已经内置在桌面版中。
 
 ## 项目结构
 
@@ -191,8 +230,10 @@ dist\Poro.exe
 src/aiproject/
   config.py       环境变量和运行时配置
   desktop.py      桌面窗口和 WebView 控制
+  desktop_overlay.py 局内悬浮图标窗口
   desktop_text.py 内置文本索引版桌面入口
   graph.py        LangGraph 工作流装配
+  lcu.py          League Client 本地接口读取
   llms.py         DeepSeek 模型创建
   main.py         CLI 与问答入口
   nodes.py        检索与回答节点
@@ -223,7 +264,7 @@ src/aiproject/
 - Ollama Embedding
 - Chroma
 - HTML / CSS / JavaScript
-- pywebview
+- Qt6 / PySide6 / Qt WebEngine
 - PyInstaller
 
 ## 说明

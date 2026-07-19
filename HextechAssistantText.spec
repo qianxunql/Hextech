@@ -1,6 +1,16 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from pathlib import Path
+import sys
+
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+
+
+python_dlls = Path(sys.base_prefix) / "DLLs"
+ssl_binaries = [
+    (str(python_dlls / "libssl-3-x64.dll"), "."),
+    (str(python_dlls / "libcrypto-3-x64.dll"), "."),
+]
 
 
 datas = [
@@ -15,7 +25,14 @@ datas = [
 ] + collect_data_files("rapidocr_onnxruntime")
 
 hiddenimports = (
-    collect_submodules("webview")
+    [
+        "PySide6.QtCore",
+        "PySide6.QtGui",
+        "PySide6.QtWidgets",
+        "PySide6.QtWebChannel",
+        "PySide6.QtWebEngineCore",
+        "PySide6.QtWebEngineWidgets",
+    ]
     + collect_submodules("PIL")
     + collect_submodules("mss")
     + collect_submodules("rapidfuzz")
@@ -26,7 +43,7 @@ hiddenimports = (
 a = Analysis(
     ["src\\aiproject\\desktop_text.py"],
     pathex=["src"],
-    binaries=[],
+    binaries=ssl_binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
@@ -41,9 +58,8 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name="Poro-TextIndex",
     debug=False,
     bootloader_ignore_signals=False,
@@ -58,4 +74,14 @@ exe = EXE(
     icon="assets\\poro.ico",
     codesign_identity=None,
     entitlements_file=None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name="Poro-TextIndex",
 )

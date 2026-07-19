@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Poro Overlay</title>
+  <link rel="stylesheet" href="/static/overlay.css" />
+</head>
+<body>
+  <main class="overlay is-collapsed" id="overlay">
+    <button class="poro-button" id="toggle" type="button" title="Poro 局内识别">
+      <span class="poro-mark">P</span>
+    </button>
+
+    <section class="dialog" id="dialog" aria-live="polite">
+      <header class="dialog-header">
+        <div>
+          <div class="title">Poro 推荐</div>
+          <div class="status" id="status">点击图标开始截图识别。</div>
+        </div>
+      </header>
+      <div class="matches" id="matches"></div>
+      <div class="answer" id="answer">识别结果和 AI 建议会显示在这里。</div>
+    </section>
+  </main>
+  <script src="/static/overlay.js"></script>
+</body>
+</html>

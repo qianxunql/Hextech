@@ -5,11 +5,43 @@ from functools import lru_cache
 from io import BytesIO
 
 
+HEXTECH_CHOICE_CROP = (0.22, 0.18, 0.79, 0.69)
+
+
 @dataclass(frozen=True)
 class OcrResult:
     text: str
     engine: str
     warning: str = ""
+    crop_box: CropBox | None = None
+
+
+@dataclass(frozen=True)
+class CropBox:
+    left: int
+    top: int
+    right: int
+    bottom: int
+
+    @property
+    def width(self) -> int:
+        return self.right - self.left
+
+    @property
+    def height(self) -> int:
+        return self.bottom - self.top
+
+    def as_tuple(self) -> tuple[int, int, int, int]:
+        return (self.left, self.top, self.right, self.bottom)
+
+
+def _ratio_crop_box(width: int, height: int, ratios: tuple[float, float, float, float]) -> CropBox:
+    left_ratio, top_ratio, right_ratio, bottom_ratio = ratios
+    left = max(0, min(width - 1, round(width * left_ratio)))
+    top = max(0, min(height - 1, round(height * top_ratio)))
+    right = max(left + 1, min(width, round(width * right_ratio)))
+    bottom = max(top + 1, min(height, round(height * bottom_ratio)))
+    return CropBox(left=left, top=top, right=right, bottom=bottom)
 
 
 def capture_primary_monitor_png() -> bytes:
@@ -27,6 +59,17 @@ def capture_primary_monitor_png() -> bytes:
         buffer = BytesIO()
         image.save(buffer, format="PNG")
         return buffer.getvalue()
+
+
+def crop_hextech_choice_area(image_bytes: bytes) -> tuple[bytes, CropBox]:
+    from PIL import Image
+
+    image = Image.open(BytesIO(image_bytes)).convert("RGB")
+    crop_box = _ratio_crop_box(image.width, image.height, HEXTECH_CHOICE_CROP)
+    cropped = image.crop(crop_box.as_tuple())
+    buffer = BytesIO()
+    cropped.save(buffer, format="PNG")
+    return buffer.getvalue(), crop_box
 
 
 def _prepare_for_ocr(image_bytes: bytes):
@@ -52,7 +95,11 @@ def _rapid_ocr():
     return RapidOCR()
 
 
-def ocr_image_bytes(image_bytes: bytes) -> OcrResult:
+def ocr_image_bytes(image_bytes: bytes, crop_hextech_area: bool = True) -> OcrResult:
+    crop_box = None
+    if crop_hextech_area:
+        image_bytes, crop_box = crop_hextech_choice_area(image_bytes)
+
     image = _prepare_for_ocr(image_bytes)
     result, _ = _rapid_ocr()(image)
     lines = []
@@ -64,4 +111,4 @@ def ocr_image_bytes(image_bytes: bytes) -> OcrResult:
     warning = ""
     if not text:
         warning = "没有从截图中识别到文字。请确认游戏处于海克斯选择界面，或先用手动输入。"
-    return OcrResult(text=text, engine="rapidocr-onnxruntime", warning=warning)
+    return OcrResult(text=text, engine="rapidocr-onnxruntime", warning=warning, crop_box=crop_box)

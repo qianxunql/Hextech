@@ -11,6 +11,7 @@ import sys
 from urllib.parse import unquote, urlparse
 
 from aiproject.config import external_config_dir
+from aiproject.lcu import get_current_champion
 from aiproject.main import run, stream as stream_run
 from aiproject.matcher import build_hextech_choice_question, match_hextech_names
 from aiproject.scraper import load_champion_pages_from_index_html, load_hextech_pages_from_index_html
@@ -177,6 +178,9 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
             except ImportError:
                 self._send_json({"hasBuiltInOcr": False, "ocrEngine": "rapidocr-onnxruntime"})
             return
+        if path == "/api/lcu/current-champion":
+            self._handle_current_champion()
+            return
         if path.startswith("/static/"):
             self._send_static_file(path)
             return
@@ -267,6 +271,12 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
             payload = self._read_json_payload()
             champion = str(payload.get("champion", "")).strip()
             manual_text = str(payload.get("ocrText", "")).strip()
+            detected_champion = None
+
+            if not champion:
+                detected_champion = get_current_champion()
+                if detected_champion is not None:
+                    champion = detected_champion.name
 
             if manual_text:
                 ocr_result = OcrResult(text=manual_text, engine="manual")
@@ -284,6 +294,25 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
                     "engine": ocr_result.engine,
                     "warning": ocr_result.warning,
                     "rawText": ocr_result.text,
+                    "cropBox": {
+                        "left": ocr_result.crop_box.left,
+                        "top": ocr_result.crop_box.top,
+                        "right": ocr_result.crop_box.right,
+                        "bottom": ocr_result.crop_box.bottom,
+                        "width": ocr_result.crop_box.width,
+                        "height": ocr_result.crop_box.height,
+                    }
+                    if ocr_result.crop_box
+                    else None,
+                    "champion": {
+                        "id": detected_champion.champion_id,
+                        "alias": detected_champion.alias,
+                        "name": detected_champion.name,
+                        "source": detected_champion.source,
+                        "phase": detected_champion.phase,
+                    }
+                    if detected_champion
+                    else None,
                     "matches": [
                         {
                             "id": item.id,
@@ -295,6 +324,27 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
                         for item in matches
                     ],
                     "question": question,
+                }
+            )
+        except Exception as exc:  # noqa: BLE001 - returned to local UI
+            self._send_json({"ok": False, "error": str(exc)}, status=500)
+
+    def _handle_current_champion(self) -> None:
+        try:
+            champion = get_current_champion()
+            if champion is None:
+                self._send_json({"ok": True, "champion": None})
+                return
+            self._send_json(
+                {
+                    "ok": True,
+                    "champion": {
+                        "id": champion.champion_id,
+                        "alias": champion.alias,
+                        "name": champion.name,
+                        "source": champion.source,
+                        "phase": champion.phase,
+                    },
                 }
             )
         except Exception as exc:  # noqa: BLE001 - returned to local UI
@@ -321,7 +371,7 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
 
     def _send_static_file(self, path: str) -> None:
         filename = Path(unquote(path)).name
-        if filename not in {"index.html", "styles.css", "app.js"}:
+        if filename not in {"index.html", "styles.css", "app.js", "overlay.html", "overlay.css", "overlay.js"}:
             self.send_error(HTTPStatus.NOT_FOUND, "Not found")
             return
 

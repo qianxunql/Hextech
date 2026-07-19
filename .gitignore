@@ -17,4 +17,7 @@ data/html/hextech/
 build/
 dist/
 *.spec
+!HextechAssistant.spec
+!HextechAssistantText.spec
+!HextechOverlay.spec
 .webserver.pid

@@ -33,8 +33,6 @@ hiddenimports = (
         "PySide6.QtWebEngineCore",
         "PySide6.QtWebEngineWidgets",
     ]
-    + collect_submodules("chromadb")
-    + collect_submodules("posthog")
     + collect_submodules("PIL")
     + collect_submodules("mss")
     + collect_submodules("rapidfuzz")
@@ -43,7 +41,7 @@ hiddenimports = (
 )
 
 a = Analysis(
-    ["src\\aiproject\\desktop.py"],
+    ["src\\aiproject\\desktop_overlay.py"],
     pathex=["src"],
     binaries=ssl_binaries,
     datas=datas,
@@ -62,7 +60,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="Poro",
+    name="Poro-Overlay",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -85,5 +83,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name="Poro",
+    name="Poro-Overlay",
 )

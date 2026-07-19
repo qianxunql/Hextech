@@ -124,6 +124,19 @@
       }
     }
 
+    async function detectCurrentChampion() {
+      try {
+        const response = await fetch("/api/lcu/current-champion");
+        const data = await response.json();
+        if (data.ok && data.champion?.name && !visionChampion.value.trim()) {
+          visionChampion.value = data.champion.name;
+          visionStatus.textContent = `已从选人阶段识别当前英雄：${data.champion.name}`;
+        }
+      } catch {
+        // League Client may not be running or the user may not be in champion select.
+      }
+    }
+
     function setReady() {
       send.classList.toggle("ready", input.value.trim().length > 0);
     }
@@ -277,7 +290,11 @@
         renderVisionMatches(data.matches || []);
         const names = (data.matches || []).map((match) => match.name).join("、") || "未识别到可靠海克斯";
         const warning = data.warning ? ` ${data.warning}` : "";
-        visionStatus.textContent = `识别结果：${names}。引擎：${data.engine}.${warning}`;
+        if (data.champion?.name && !visionChampion.value.trim()) {
+          visionChampion.value = data.champion.name;
+        }
+        const championText = data.champion?.name ? ` 当前英雄：${data.champion.name}。` : "";
+        visionStatus.textContent = `识别结果：${names}。${championText}引擎：${data.engine}.${warning}`;
 
         setActiveView("ai", { skipHistory: true });
         addMessage("user", `局内截图推荐\n${data.question}`);
@@ -349,7 +366,7 @@
     }
 
     function callWindowApi(action) {
-      const api = window.pywebview?.api;
+      const api = window.poroNative?.api;
       if (api?.[action]) {
         api[action]();
       } else if (action === "close") {
@@ -597,6 +614,7 @@
     applyTheme(localStorage.getItem("hextech:theme") || "light");
     applyNavExpanded(localStorage.getItem("hextech:navExpanded") === "1");
     loadVisionStatus();
+    detectCurrentChampion();
     guideMissingApiKey();
     input.focus();
     setReady();
