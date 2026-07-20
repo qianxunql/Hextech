@@ -36,15 +36,19 @@ button {
   top: 5px;
   width: 54px;
   height: 54px;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 16px;
-  background:
-    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.34), transparent 28px),
-    linear-gradient(145deg, #70e2f1, #2b91dc 48%, #5d5df0);
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
   color: #061118;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34);
   cursor: pointer;
   -webkit-app-region: no-drag;
+}
+
+.expand-left .poro-button {
+  right: 5px;
+  left: auto;
 }
 
 .poro-button:hover {
@@ -56,16 +60,11 @@ button {
   filter: saturate(0.72);
 }
 
-.poro-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.72);
-  font-size: 22px;
-  font-weight: 850;
-  letter-spacing: 0;
+.poro-icon {
+  display: block;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
 }
 
 .dialog {
@@ -87,10 +86,19 @@ button {
   transition: opacity 140ms ease, transform 140ms ease;
 }
 
+.expand-left .dialog {
+  right: 72px;
+  left: auto;
+}
+
 .is-collapsed .dialog {
   pointer-events: none;
   opacity: 0;
   transform: translateX(-10px);
+}
+
+.expand-left.is-collapsed .dialog {
+  transform: translateX(10px);
 }
 
 .title {

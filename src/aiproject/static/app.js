@@ -36,11 +36,7 @@
     const modalSubtitle = document.querySelector("#modalSubtitle");
     const modalAnswer = document.querySelector("#modalAnswer");
     const hextechTooltip = document.querySelector("#hextechTooltip");
-    const visionChampion = document.querySelector("#visionChampion");
-    const visionText = document.querySelector("#visionText");
-    const recognizeScreenshot = document.querySelector("#recognizeScreenshot");
-    const visionStatus = document.querySelector("#visionStatus");
-    const visionMatches = document.querySelector("#visionMatches");
+    const appHeader = document.querySelector("header");
 
     let championItems = [];
     let hextechItems = [];
@@ -48,6 +44,8 @@
     let activeTooltipHextechId = "";
     let activeViewName = "ai";
     let previousViewName = "ai";
+    let titleDragStart = null;
+    let titleDragged = false;
     const zhCollator = new Intl.Collator("zh-Hans-CN", { numeric: true, sensitivity: "base" });
 
     function applyTheme(theme) {
@@ -107,33 +105,6 @@
       if (!settings.hasDeepseekApiKey) {
         setActiveView("settings", { skipHistory: true });
         apiKeyInput.focus();
-      }
-    }
-
-    async function loadVisionStatus() {
-      try {
-        const response = await fetch("/api/vision/status");
-        const data = await response.json();
-        if (data.hasBuiltInOcr) {
-          visionStatus.textContent = "内置 OCR 已就绪。先把游戏停在海克斯选择界面，再点击识别。";
-        } else {
-          visionStatus.textContent = "内置 OCR 不可用。可先在手动 OCR 文本中输入海克斯名称来生成推荐。";
-        }
-      } catch {
-        visionStatus.textContent = "OCR 状态读取失败，可使用手动 OCR 文本生成推荐。";
-      }
-    }
-
-    async function detectCurrentChampion() {
-      try {
-        const response = await fetch("/api/lcu/current-champion");
-        const data = await response.json();
-        if (data.ok && data.champion?.name && !visionChampion.value.trim()) {
-          visionChampion.value = data.champion.name;
-          visionStatus.textContent = `已从选人阶段识别当前英雄：${data.champion.name}`;
-        }
-      } catch {
-        // League Client may not be running or the user may not be in champion select.
       }
     }
 
@@ -254,69 +225,6 @@
       return answer;
     }
 
-    function renderVisionMatches(matches) {
-      visionMatches.textContent = "";
-      matches.forEach((match) => {
-        const chip = document.createElement("span");
-        chip.className = "vision-chip";
-        chip.dataset.hextechId = match.id;
-        chip.innerHTML = `${escapeHtml(match.name)} <span>${escapeHtml(match.tier || "")} ${escapeHtml(match.score || "")}</span>`;
-        visionMatches.appendChild(chip);
-      });
-    }
-
-    async function recognizeAndRecommend() {
-      if (recognizeScreenshot.disabled) return;
-      recognizeScreenshot.disabled = true;
-      visionStatus.textContent = visionText.value.trim()
-        ? "正在匹配手动 OCR 文本..."
-        : "正在截取当前屏幕并识别海克斯文字...";
-      visionMatches.textContent = "";
-
-      try {
-        const response = await fetch("/api/recognize-screenshot", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            champion: visionChampion.value.trim(),
-            ocrText: visionText.value.trim(),
-          }),
-        });
-        const data = await response.json();
-        if (!response.ok || !data.ok) {
-          throw new Error(data.error || `HTTP ${response.status}`);
-        }
-
-        renderVisionMatches(data.matches || []);
-        const names = (data.matches || []).map((match) => match.name).join("、") || "未识别到可靠海克斯";
-        const warning = data.warning ? ` ${data.warning}` : "";
-        if (data.champion?.name && !visionChampion.value.trim()) {
-          visionChampion.value = data.champion.name;
-        }
-        const championText = data.champion?.name ? ` 当前英雄：${data.champion.name}。` : "";
-        visionStatus.textContent = `识别结果：${names}。${championText}引擎：${data.engine}.${warning}`;
-
-        setActiveView("ai", { skipHistory: true });
-        addMessage("user", `局内截图推荐\n${data.question}`);
-        const pending = addMessage("assistant", "正在基于识别结果生成推荐...");
-        recognizeScreenshot.disabled = true;
-        send.disabled = true;
-        try {
-          const answer = await askStream(data.question, (partial) => {
-            pending.textContent = partial;
-            messages.scrollTop = messages.scrollHeight;
-          });
-          await setMessageWithHextechTerms(pending, answer || "没有得到回答。");
-        } finally {
-          send.disabled = false;
-        }
-      } catch (error) {
-        visionStatus.textContent = `识别失败：${error}`;
-      } finally {
-        recognizeScreenshot.disabled = false;
-      }
-    }
-
     function setActiveView(view, options = {}) {
       if (championModal.classList.contains("open")) {
         closeChampionModal();
@@ -371,6 +279,13 @@
         api[action]();
       } else if (action === "close") {
         window.close();
+      }
+    }
+
+    function callWindowApiWithArgs(action, ...args) {
+      const api = window.poroNative?.api;
+      if (api?.[action]) {
+        api[action](...args);
       }
     }
 
@@ -589,32 +504,60 @@
     windowMaximize.addEventListener("click", () => callWindowApi("toggle_maximize"));
     windowClose.addEventListener("click", () => callWindowApi("close"));
     saveSettings.addEventListener("click", saveApiKey);
-    recognizeScreenshot.addEventListener("click", recognizeAndRecommend);
     aiTab.addEventListener("click", () => setActiveView("ai"));
     rosterTab.addEventListener("click", () => setActiveView("roster"));
     hextechTab.addEventListener("click", () => setActiveView("hextech"));
     championSearch.addEventListener("input", renderChampions);
     hextechSearch.addEventListener("input", renderHextechs);
     document.addEventListener("mouseover", (event) => {
-      const term = event.target.closest?.(".hextech-term, .hextech-card, .vision-chip");
+      const term = event.target.closest?.(".hextech-term, .hextech-card");
       if (term) showHextechTooltip(term, event);
     });
     document.addEventListener("mousemove", (event) => {
-      if (event.target.closest?.(".hextech-term, .hextech-card, .vision-chip")) {
+      if (event.target.closest?.(".hextech-term, .hextech-card")) {
         positionHextechTooltip(event);
       }
     });
     document.addEventListener("mouseout", (event) => {
-      const term = event.target.closest?.(".hextech-term, .hextech-card, .vision-chip");
+      const term = event.target.closest?.(".hextech-term, .hextech-card");
       if (term && !term.contains(event.relatedTarget)) {
         hideHextechTooltip();
       }
     });
 
+    appHeader.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || event.target.closest("button")) return;
+      titleDragStart = { x: event.screenX, y: event.screenY };
+      titleDragged = false;
+      appHeader.setPointerCapture(event.pointerId);
+      callWindowApiWithArgs("startDrag", Math.round(event.screenX), Math.round(event.screenY));
+    });
+
+    appHeader.addEventListener("pointermove", (event) => {
+      if (!titleDragStart) return;
+      const distance = Math.hypot(event.screenX - titleDragStart.x, event.screenY - titleDragStart.y);
+      if (distance > 3) titleDragged = true;
+      if (titleDragged) {
+        callWindowApiWithArgs("dragTo", Math.round(event.screenX), Math.round(event.screenY));
+      }
+    });
+
+    appHeader.addEventListener("pointerup", (event) => {
+      if (!titleDragStart) return;
+      appHeader.releasePointerCapture(event.pointerId);
+      callWindowApi("endDrag");
+      titleDragStart = null;
+      titleDragged = false;
+    });
+
+    appHeader.addEventListener("pointercancel", () => {
+      callWindowApi("endDrag");
+      titleDragStart = null;
+      titleDragged = false;
+    });
+
     applyTheme(localStorage.getItem("hextech:theme") || "light");
     applyNavExpanded(localStorage.getItem("hextech:navExpanded") === "1");
-    loadVisionStatus();
-    detectCurrentChampion();
     guideMissingApiKey();
     input.focus();
     setReady();

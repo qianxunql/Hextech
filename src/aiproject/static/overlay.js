@@ -6,6 +6,8 @@ const answerNode = document.querySelector("#answer");
 
 let expanded = false;
 let loading = false;
+let dragStart = null;
+let dragged = false;
 
 function escapeHtml(value) {
   return String(value)
@@ -23,10 +25,29 @@ function callWindowApi(action) {
   }
 }
 
+function callWindowApiWithArgs(action, ...args) {
+  const api = window.poroNative?.api;
+  if (api?.[action]) {
+    api[action](...args);
+  }
+}
+
+function getExpandDirection() {
+  const screenLeft = window.screen?.availLeft ?? 0;
+  const screenWidth = window.screen?.availWidth ?? window.screen?.width ?? 1920;
+  const windowLeft = window.screenX ?? window.screenLeft ?? 0;
+  const windowWidth = window.outerWidth || overlay.offsetWidth || 64;
+  const windowCenter = windowLeft + windowWidth / 2;
+  return windowCenter > screenLeft + screenWidth / 2 ? "left" : "right";
+}
+
 function expand() {
   expanded = true;
+  const direction = getExpandDirection();
+  overlay.classList.toggle("expand-left", direction === "left");
+  overlay.classList.toggle("expand-right", direction !== "left");
   overlay.classList.remove("is-collapsed");
-  callWindowApi("expand");
+  callWindowApiWithArgs("expandTo", direction);
 }
 
 function collapse(force = false) {
@@ -111,14 +132,55 @@ async function recognizeAndAsk() {
     answerNode.textContent = answer || "没有得到回答。";
   } catch (error) {
     statusNode.textContent = "识别失败";
-    answerNode.textContent = `失败：${error}\n\n可以回到主 Poro 窗口，在「局内截图识别」里手动输入海克斯名称。`;
+    answerNode.textContent = `失败：${error}\n\n请确认游戏停在海克斯选择界面，并尽量使用无边框或窗口化模式。`;
   } finally {
     loading = false;
     toggle.disabled = false;
   }
 }
 
-toggle.addEventListener("click", () => {
+toggle.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0) return;
+  dragStart = {
+    x: event.screenX,
+    y: event.screenY,
+  };
+  dragged = false;
+  toggle.setPointerCapture(event.pointerId);
+  callWindowApiWithArgs("startDrag", Math.round(event.screenX), Math.round(event.screenY));
+});
+
+toggle.addEventListener("pointermove", (event) => {
+  if (!dragStart) return;
+  const distance = Math.hypot(event.screenX - dragStart.x, event.screenY - dragStart.y);
+  if (distance > 4) {
+    dragged = true;
+  }
+  if (dragged) {
+    callWindowApiWithArgs("dragTo", Math.round(event.screenX), Math.round(event.screenY));
+  }
+});
+
+toggle.addEventListener("pointerup", (event) => {
+  if (!dragStart) return;
+  toggle.releasePointerCapture(event.pointerId);
+  callWindowApi("endDrag");
+  dragStart = null;
+});
+
+toggle.addEventListener("pointercancel", () => {
+  callWindowApi("endDrag");
+  dragStart = null;
+  dragged = false;
+});
+
+toggle.addEventListener("click", (event) => {
+  if (dragged) {
+    event.preventDefault();
+    event.stopPropagation();
+    dragged = false;
+    return;
+  }
   if (loading) return;
   if (expanded) {
     collapse();

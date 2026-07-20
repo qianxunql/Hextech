@@ -190,6 +190,9 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
         if path.startswith("/assets/hextech/"):
             self._send_hextech_image(path)
             return
+        if path == "/assets/poro.ico":
+            self._send_app_icon()
+            return
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
     def do_POST(self) -> None:
@@ -419,6 +422,19 @@ class HextechRequestHandler(BaseHTTPRequestHandler):
         body = image_path.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", mimetypes.guess_type(filename)[0] or "image/webp")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_app_icon(self) -> None:
+        icon_path = app_dir() / "assets" / "poro.ico"
+        if not icon_path.exists():
+            self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+            return
+
+        body = icon_path.read_bytes()
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "image/x-icon")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)

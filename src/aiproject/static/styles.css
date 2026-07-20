@@ -92,6 +92,8 @@
       background: var(--bg);
       border-bottom: 1px solid var(--line);
       z-index: 70;
+      cursor: default;
+      user-select: none;
     }
 
     .title-area {
@@ -498,120 +500,6 @@
       min-height: 0;
     }
 
-    .vision-panel {
-      width: min(880px, 100%);
-      margin: 0 auto 18px;
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: var(--card);
-      box-shadow: 0 10px 28px var(--shadow);
-    }
-
-    .vision-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 12px;
-    }
-
-    .vision-title {
-      font-size: 16px;
-      font-weight: 700;
-    }
-
-    .vision-subtitle,
-    .vision-status {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    .vision-action {
-      height: 40px;
-      border-radius: 12px;
-      padding: 0 16px;
-      background: var(--text);
-      color: var(--bg);
-      font-size: 14px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .vision-action:disabled {
-      cursor: wait;
-      opacity: 0.6;
-    }
-
-    .vision-fields {
-      display: grid;
-      grid-template-columns: minmax(150px, 0.42fr) 1fr;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .vision-field {
-      display: grid;
-      gap: 6px;
-      min-width: 0;
-    }
-
-    .vision-field span {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 650;
-    }
-
-    .vision-field input,
-    .vision-field textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: var(--field);
-      color: var(--text);
-      font: 13px "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
-    }
-
-    .vision-field input {
-      height: 38px;
-      padding: 0 10px;
-    }
-
-    .vision-field textarea {
-      height: 38px;
-      min-height: 38px;
-      padding: 8px 10px;
-      line-height: 1.45;
-      resize: vertical;
-    }
-
-    .vision-matches {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .vision-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      min-height: 30px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      background: var(--panel);
-      color: var(--text);
-      border: 1px solid var(--line);
-      font-size: 12px;
-      font-weight: 650;
-    }
-
-    .vision-chip span {
-      color: var(--muted);
-      font-weight: 500;
-    }
-
     .empty { margin: auto; }
 
     .messages {
@@ -1011,12 +899,6 @@
         grid-template-columns: 1fr;
         min-height: 180px;
         padding: 22px;
-      }
-      .vision-head,
-      .vision-fields {
-        grid-template-columns: 1fr;
-        flex-direction: column;
-        align-items: stretch;
       }
       textarea { font-size: 20px; }
       .controls { justify-content: flex-end; }

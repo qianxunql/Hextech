@@ -135,7 +135,7 @@ def install_web_bridge(view, bridge) -> None:
 
 
 def create_desktop_window(title: str, url: str, on_close: Callable[[], None] | None = None):
-    from PySide6.QtCore import QObject, QUrl, Slot
+    from PySide6.QtCore import QObject, QPoint, Qt, QUrl, Slot
     from PySide6.QtWidgets import QMainWindow
     from PySide6.QtWebEngineWidgets import QWebEngineView
 
@@ -143,6 +143,8 @@ def create_desktop_window(title: str, url: str, on_close: Callable[[], None] | N
         def __init__(self, window: QMainWindow) -> None:
             super().__init__(window)
             self.window = window
+            self.drag_mouse_start: QPoint | None = None
+            self.drag_window_start: QPoint | None = None
 
         @Slot()
         def minimize(self) -> None:
@@ -159,6 +161,25 @@ def create_desktop_window(title: str, url: str, on_close: Callable[[], None] | N
         def close(self) -> None:
             self.window.close()
 
+        @Slot(int, int)
+        def startDrag(self, screen_x: int, screen_y: int) -> None:
+            if self.window.isMaximized():
+                self.window.showNormal()
+            self.drag_mouse_start = QPoint(screen_x, screen_y)
+            self.drag_window_start = self.window.pos()
+
+        @Slot(int, int)
+        def dragTo(self, screen_x: int, screen_y: int) -> None:
+            if self.drag_mouse_start is None or self.drag_window_start is None:
+                return
+            delta = QPoint(screen_x, screen_y) - self.drag_mouse_start
+            self.window.move(self.drag_window_start + delta)
+
+        @Slot()
+        def endDrag(self) -> None:
+            self.drag_mouse_start = None
+            self.drag_window_start = None
+
     class DesktopWindow(QMainWindow):
         def closeEvent(self, event) -> None:
             if on_close:
@@ -167,6 +188,7 @@ def create_desktop_window(title: str, url: str, on_close: Callable[[], None] | N
 
     window = DesktopWindow()
     window.setWindowTitle(title)
+    window.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
     window.resize(1190, 900)
     window.setMinimumSize(860, 680)
 

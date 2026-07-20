@@ -32,6 +32,7 @@ hiddenimports = (
         "PySide6.QtWebChannel",
         "PySide6.QtWebEngineCore",
         "PySide6.QtWebEngineWidgets",
+        "aiproject.desktop_overlay",
     ]
     + collect_submodules("chromadb")
     + collect_submodules("posthog")
